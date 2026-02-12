@@ -11,6 +11,10 @@ urlpatterns = [
     path('learning-path/', views.learning_path_page, name='learning_path'),
     path('assessment/', views.assessment_page, name='assessment'),
     path('upload/', views.upload_page, name='upload'),
+    path('prediction/', views.prediction_page, name='prediction'),
+    path('model-comparison/', views.model_comparison_page, name='model_comparison'),
+    path('login/', views.login_page, name='login'),
+    path('register/', views.register_page, name='register'),
     path('name-customization/', TemplateView.as_view(template_name='name-customization.html'), name='name_customization'),
     
     path('api/datasets/', views.api_datasets, name='api_datasets'),
@@ -22,6 +26,7 @@ urlpatterns = [
     path('api/trend/<str:dataset>/<int:user_id>/', views.api_learning_trend, name='api_learning_trend'),
     path('api/errors/<str:dataset>/<int:user_id>/', views.api_error_analysis, name='api_error_analysis'),
     path('api/path/<str:dataset>/<int:user_id>/', views.api_learning_path, name='api_learning_path'),
+    path('api/predict/', views.api_predict, name='api_predict'),
     path('api/ocr/', views.api_ocr, name='api_ocr'),
     path('api/save-question/', views.api_save_question, name='api_save_question'),
     path('api/mappings/<str:dataset>/', views.api_mappings, name='api_mappings'),

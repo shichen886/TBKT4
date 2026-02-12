@@ -12,27 +12,8 @@
     <div class="background-texture"></div>
     
     <div class="dashboard-container">
-        <nav class="dashboard-nav">
-            <h1 class="nav-title">📊 学生学习分析</h1>
-            <div class="nav-links">
-                <a href="/dashboard/" class="nav-link">仪表盘</a>
-                <a href="/recommendation/" class="nav-link">学习推荐</a>
-                <a href="/learning-path/" class="nav-link">学习路径</a>
-                <a href="/assessment/" class="nav-link">教育评估</a>
-                <a href="/name-customization/" class="nav-link">自定义名称</a>
-                <a href="/upload/" class="nav-link">上传数据</a>
-            </div>
-        </nav>
-        
         <div class="dashboard-content">
             <div class="settings-panel">
-                <div class="setting-group">
-                    <label>选择数据集</label>
-                    <select id="datasetSelect" class="styled-select">
-                        <option value="">加载中...</option>
-                    </select>
-                </div>
-                
                 <div class="setting-group">
                     <label>选择学生</label>
                     <select id="userSelect" class="styled-select" disabled>
@@ -50,6 +31,14 @@
                 </div>
                 
                 <button id="analyzeBtn" class="primary-button">开始分析</button>
+            </div>
+            
+            <div class="info-panel">
+                <div class="info-card">
+                    <h4>💡 提示</h4>
+                    <p>数据集选择已移至全局设置中，您可以在仪表盘页面的侧边栏中设置。</p>
+                    <button class="secondary-button" onclick="window.location.href='/dashboard/'">前往全局设置</button>
+                </div>
             </div>
             
             <div class="results-panel">

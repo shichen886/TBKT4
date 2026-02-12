@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习表现预测 - 智能知识追踪系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/echarts.min.js"></script>
+    <style>
+        .prediction-container {
+            padding: 2rem;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        .prediction-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .prediction-header h1 {
+            font-size: 2.5rem;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .prediction-header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .prediction-form {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .predict-button {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .predict-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .predict-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .prediction-results {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .prediction-results.active {
+            display: block;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .result-card h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .accuracy-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .accuracy-value.high {
+            color: #4caf50;
+        }
+
+        .accuracy-value.medium {
+            color: #ff9800;
+        }
+
+        .accuracy-value.low {
+            color: #f44336;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .chart-container h3 {
+            color: #667eea;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading-spinner.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="prediction-container">
+        <div class="prediction-header">
+            <h1>🔮 学习表现预测</h1>
+            <p>使用多种AI算法预测学生未来的学习表现</p>
+        </div>
+
+        <div class="prediction-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="student_id">学生ID</label>
+                    <input type="number" id="student_id" name="student_id" placeholder="请输入学生ID" required>
+                </div>
+                <div class="form-group">
+                    <label for="skill_id">技能ID</label>
+                    <input type="number" id="skill_id" name="skill_id" placeholder="请输入技能ID" required>
+                </div>
+            </div>
+
+            <button type="button" class="predict-button" id="predictBtn">开始预测</button>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner"></div>
+            <p>正在预测中，请稍候...</p>
+        </div>
+
+        <div class="prediction-results" id="predictionResults">
+            <div class="results-grid" id="accuracyGrid">
+                <!-- 准确率卡片将在这里动态生成 -->
+            </div>
+
+            <div class="chart-container">
+                <h3>📊 预测结果对比</h3>
+                <canvas id="predictionChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h3>📈 学习表现分析</h3>
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const predictBtn = document.getElementById('predictBtn');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const predictionResults = document.getElementById('predictionResults');
+        const errorMessage = document.getElementById('errorMessage');
+        const accuracyGrid = document.getElementById('accuracyGrid');
+
+        let predictionChart = null;
+        let performanceChart = null;
+
+        predictBtn.addEventListener('click', async () => {
+            const studentId = document.getElementById('student_id').value;
+            const skillId = document.getElementById('skill_id').value;
+
+            if (!studentId || !skillId) {
+                showError('请填写学生ID和技能ID');
+                return;
+            }
+
+            try {
+                showLoading(true);
+                hideError();
+
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        student_id: parseInt(studentId),
+                        skill_id: parseInt(skillId)
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.code === 200) {
+                    displayResults(data.data);
+                } else {
+                    showError(data.msg || '预测失败');
+                }
+            } catch (error) {
+                showError('预测失败: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        function showLoading(show) {
+            loadingSpinner.classList.toggle('active', show);
+            predictBtn.disabled = show;
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('active');
+        }
+
+        function displayResults(data) {
+            predictionResults.classList.add('active');
+
+            // 显示准确率卡片
+            displayAccuracyCards(data.accuracy);
+
+            // 显示预测结果图表
+            displayPredictionChart(data);
+
+            // 显示学习表现分析
+            displayPerformanceChart(data.performance_analysis);
+        }
+
+        function displayAccuracyCards(accuracy) {
+            const models = [
+                { key: 'tensor_attention', name: '张量自注意力' },
+                { key: 'rnn', name: 'RNN' },
+                { key: 'lstm', name: 'LSTM' },
+                { key: 'gru', name: 'GRU' },
+                { key: 'apriori', name: 'Apriori' },
+                { key: 'avg', name: '平均算法' }
+            ];
+
+            accuracyGrid.innerHTML = models.map(model => {
+                const value = accuracy[model.key] || 0;
+                const valueClass = value >= 0.7 ? 'high' : value >= 0.5 ? 'medium' : 'low';
+                return `
+                    <div class="result-card">
+                        <h3>${model.name}</h3>
+                        <div class="accuracy-value ${valueClass}">${(value * 100).toFixed(1)}%</div>
+                        <p>预测准确率</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function displayPredictionChart(data) {
+            const chartDom = document.getElementById('predictionChart');
+            
+            if (predictionChart) {
+                predictionChart.dispose();
+            }
+            
+            predictionChart = echarts.init(chartDom);
+
+            const timePoints = data.time_points;
+            const actualValues = data.actual_values;
+
+            const series = [
+                {
+                    name: '实际值',
+                    type: 'line',
+                    data: actualValues,
+                    itemStyle: {
+                        color: '#333'
+                    },
+                    lineStyle: {
+                        width: 3
+                    },
+                    symbolSize: 8
+                },
+                {
+                    name: '张量自注意力',
+                    type: 'line',
+                    data: data.tensor_attention_pred,
+                    itemStyle: {
+                        color: '#667eea'
+                    },
+                    smooth: true
+                },
+                {
+                    name: 'RNN',
+                    type: 'line',
+                    data: data.rnn_pred,
+                    itemStyle: {
+                        color: '#f093fb'
+                    },
+                    smooth: true
+                },
+                {
+                    name: 'LSTM',
+                    type: 'line',
+                    data: data.lstm_pred,
+                    itemStyle: {
+                        color: '#4facfe'
+                    },
+                    smooth: true
+                },
+                {
+                    name: 'GRU',
+                    type: 'line',
+                    data: data.gru_pred,
+                    itemStyle: {
+                        color: '#43e97b'
+                    },
+                    smooth: true
+                },
+                {
+                    name: 'Apriori',
+                    type: 'line',
+                    data: data.apriori_pred,
+                    itemStyle: {
+                        color: '#fa709a'
+                    },
+                    smooth: true
+                },
+                {
+                    name: '平均算法',
+                    type: 'line',
+                    data: data.avg_pred,
+                    itemStyle: {
+                        color: '#764ba2'
+                    },
+                    lineStyle: {
+                        width: 3
+                    },
+                    smooth: true
+                }
+            ];
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis'
+                },
+                legend: {
+                    bottom: 0,
+                    padding: [20, 0, 0, 0]
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    top: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: timePoints,
+                    name: '时间点'
+                },
+                yAxis: {
+                    type: 'value',
+                    min: 0,
+                    max: 1,
+                    name: '预测概率'
+                },
+                series: series
+            };
+            
+            predictionChart.setOption(option);
+            
+            window.addEventListener('resize', function() {
+                predictionChart.resize();
+            });
+        }
+
+        function displayPerformanceChart(performance) {
+            const chartDom = document.getElementById('performanceChart');
+            
+            if (performanceChart) {
+                performanceChart.dispose();
+            }
+            
+            performanceChart = echarts.init(chartDom);
+
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c}% ({d}%)'
+                },
+                legend: {
+                    bottom: 0,
+                    padding: [20, 0, 0, 0]
+                },
+                series: [
+                    {
+                        name: '学习状态',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 10,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: false,
+                            position: 'center'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 20,
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labelLine: {
+                            show: false
+                        },
+                        data: [
+                            { 
+                                value: performance.mastery, 
+                                name: '已掌握',
+                                itemStyle: {
+                                    color: 'rgba(76, 175, 80, 0.8)'
+                                }
+                            },
+                            { 
+                                value: performance.learning, 
+                                name: '学习中',
+                                itemStyle: {
+                                    color: 'rgba(255, 152, 0, 0.8)'
+                                }
+                            },
+                            { 
+                                value: performance.struggling, 
+                                name: '需要帮助',
+                                itemStyle: {
+                                    color: 'rgba(244, 67, 54, 0.8)'
+                                }
+                            }
+                        ]
+                    }
+                ]
+            };
+            
+            performanceChart.setOption(option);
+            
+            window.addEventListener('resize', function() {
+                performanceChart.resize();
+            });
+        }
+    </script>
+</body>
+</html>

@@ -6,24 +6,354 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>知识追踪仪表盘</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'js/echarts.min.js' %}"></script>
+    <style>
+        /* 全局设置侧边栏样式 */
+        .settings-sidebar {
+            width: 240px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1.5rem;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .settings-sidebar.collapsed {
+            width: 60px;
+            padding: 1rem 0.5rem;
+        }
+        
+        /* 收起按钮 */
+        .sidebar-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 0.5rem;
+            width: 24px;
+            height: 24px;
+            background: rgba(102, 126, 234, 0.8);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .sidebar-toggle:hover {
+            background: rgba(102, 126, 234, 1);
+            transform: scale(1.1);
+        }
+        
+        .settings-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.5);
+            transition: all 0.3s ease;
+        }
+        
+        .settings-header h3 {
+            color: #667eea;
+            margin: 0;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .settings-section {
+            margin-bottom: 1.2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .settings-section h4 {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 0.6rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .settings-select {
+            width: 100%;
+            padding: 0.6rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .settings-select:hover {
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 8px rgba(102, 126, 234, 0.2);
+        }
+        
+        .settings-select option {
+            background: #1a1a2e;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .settings-input {
+            width: 100%;
+            padding: 0.6rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        
+        .settings-input:hover {
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+        
+        .settings-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* 开关样式 */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 45px;
+            height: 20px;
+            margin-right: 0.6rem;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: .4s;
+            border-radius: 20px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: rgba(102, 126, 234, 0.7);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(25px);
+        }
+        
+        .toggle-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85rem;
+            vertical-align: middle;
+        }
+        
+        .settings-footer {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .settings-footer button {
+            width: 100%;
+            margin-bottom: 0.6rem;
+            font-size: 0.85rem;
+            padding: 0.6rem;
+        }
+        
+        /* 收起状态下的样式 */
+        .settings-sidebar.collapsed .settings-header h3,
+        .settings-sidebar.collapsed .settings-section h4,
+        .settings-sidebar.collapsed .toggle-label,
+        .settings-sidebar.collapsed .settings-select,
+        .settings-sidebar.collapsed .settings-input,
+        .settings-sidebar.collapsed .settings-footer {
+            display: none;
+        }
+        
+        .settings-sidebar.collapsed .settings-section {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        
+        .settings-sidebar.collapsed .toggle-switch {
+            margin-right: 0;
+        }
+        
+        .settings-sidebar.collapsed .sidebar-toggle {
+            right: 50%;
+            transform: translateX(50%);
+        }
+        
+        .settings-sidebar.collapsed .sidebar-toggle:hover {
+            transform: translateX(50%) scale(1.1);
+        }
+        
+        /* 调整布局 */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+        
+        .dashboard-container.sidebar-collapsed {
+            grid-template-columns: 60px 1fr;
+        }
+        
+        .dashboard-content {
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 220px 1fr;
+            }
+            
+            .settings-sidebar {
+                width: 220px;
+                padding: 1.2rem;
+            }
+            
+            .dashboard-container.sidebar-collapsed {
+                grid-template-columns: 60px 1fr;
+            }
+            
+            .dashboard-content {
+                padding: 1.2rem;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr;
+            }
+            
+            .dashboard-container.sidebar-collapsed {
+                grid-template-columns: 1fr;
+            }
+            
+            .settings-sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+                padding: 1.2rem;
+            }
+            
+            .settings-sidebar.collapsed {
+                width: 100%;
+                padding: 1rem;
+            }
+            
+            .settings-header {
+                margin-bottom: 1rem;
+            }
+            
+            .settings-section {
+                margin-bottom: 1rem;
+            }
+            
+            .settings-footer {
+                margin-top: 1rem;
+                padding-top: 1rem;
+            }
+            
+            .sidebar-toggle {
+                right: 1rem;
+                top: 1rem;
+                border-radius: 10px;
+                width: 30px;
+                height: 30px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="background-texture"></div>
     
     <div class="dashboard-container">
-        <nav class="dashboard-nav">
-            <h1 class="nav-title">知识追踪系统</h1>
-            <div class="nav-links">
-                <a href="/recommendation/" class="nav-link">学习推荐</a>
-                <a href="/analysis/" class="nav-link">学习分析</a>
-                <a href="/learning-path/" class="nav-link">学习路径</a>
-                <a href="/assessment/" class="nav-link">教育评估</a>
-                <a href="/name-customization/" class="nav-link">自定义名称</a>
-                <a href="/upload/" class="nav-link">上传数据</a>
-                <a href="/" class="nav-link">返回首页</a>
+        <!-- 全局设置侧边栏 -->
+        <div class="settings-sidebar">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <span>«</span>
+            </button>
+            <div class="settings-header">
+                <h3>⚙️ 全局设置</h3>
             </div>
-        </nav>
+            <div class="settings-section">
+                <h4>数据集选择</h4>
+                <select id="datasetSelect" class="settings-select">
+                    <option value="assistments2009">Assistments 2009</option>
+                    <option value="assistments2015">Assistments 2015</option>
+                    <option value="ednet">EdNet</option>
+                    <option value="synthetic">合成数据</option>
+                </select>
+            </div>
+            <div class="settings-section">
+                <h4>模型选择</h4>
+                <select id="modelSelect" class="settings-select">
+                    <option value="tensor_attention">张量自注意力</option>
+                    <option value="rnn">RNN</option>
+                    <option value="lstm">LSTM</option>
+                    <option value="gru">GRU</option>
+                    <option value="apriori">Apriori</option>
+                    <option value="avg">平均算法</option>
+                </select>
+            </div>
+            <div class="settings-section">
+                <h4>知识追踪模型</h4>
+                <select id="ktModelSelect" class="settings-select">
+                    <option value="dkt">DKT</option>
+                    <option value="sakt">SAKT</option>
+                    <option value="iekt">IEKT</option>
+                    <option value="akt">AKT</option>
+                    <option value="dkvmn">DKVMN</option>
+                </select>
+            </div>
+            <div class="settings-section">
+                <h4>自适应学习</h4>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="adaptiveToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">启用自适应</span>
+            </div>
+            <div class="settings-section">
+                <h4>学习目标</h4>
+                <input type="number" id="studyGoalInput" class="settings-input" placeholder="每日学习时长(分钟)" min="1">
+            </div>
+            <div class="settings-footer">
+                <button id="saveSettings" class="primary-button">保存设置</button>
+                <button id="resetSettings" class="secondary-button">重置默认</button>
+            </div>
+        </div>
         
         <div class="dashboard-content">
             <div class="stats-grid">
@@ -452,71 +782,67 @@
         
         // 初始化知识点掌握情况图表
         function initKnowledgeChart() {
-            const ctx = document.getElementById('knowledgeChart').getContext('2d');
+            const chartDom = document.getElementById('knowledgeChart');
+            const myChart = echarts.init(chartDom);
             
-            // 模拟知识点掌握数据
-            const knowledgeData = {
-                labels: ['数学', '语文', '英语', '物理', '化学', '生物', '历史', '地理'],
-                datasets: [{
-                    label: '知识点掌握程度',
-                    data: [85, 78, 92, 65, 70, 80, 75, 68],
-                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
-                    borderColor: 'rgba(79, 70, 229, 0.8)',
-                    borderWidth: 2,
-                    pointBackgroundColor: 'rgba(255, 255, 255, 1)',
-                    pointBorderColor: 'rgba(79, 70, 229, 1)',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
+            const option = {
+                radar: {
+                    indicator: [
+                        { name: '数学', max: 100 },
+                        { name: '语文', max: 100 },
+                        { name: '英语', max: 100 },
+                        { name: '物理', max: 100 },
+                        { name: '化学', max: 100 },
+                        { name: '生物', max: 100 },
+                        { name: '历史', max: 100 },
+                        { name: '地理', max: 100 }
+                    ],
+                    splitArea: {
+                        areaStyle: {
+                            color: ['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.02)']
+                        }
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: 'rgba(255, 255, 255, 0.2)'
+                        }
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                },
+                series: [{
+                    type: 'radar',
+                    data: [{
+                        value: [85, 78, 92, 65, 70, 80, 75, 68],
+                        name: '知识点掌握程度',
+                        areaStyle: {
+                            color: 'rgba(79, 70, 229, 0.3)'
+                        },
+                        lineStyle: {
+                            color: 'rgba(79, 70, 229, 0.8)',
+                            width: 2
+                        },
+                        itemStyle: {
+                            color: 'rgba(79, 70, 229, 1)'
+                        }
+                    }]
                 }]
             };
             
-            new Chart(ctx, {
-                type: 'radar',
-                data: knowledgeData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: 'rgba(255, 255, 255, 0.7)',
-                                font: {
-                                    weight: 300
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        r: {
-                            angleLines: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            pointLabels: {
-                                color: 'rgba(255, 255, 255, 0.8)',
-                                font: {
-                                    weight: 300
-                                }
-                            },
-                            ticks: {
-                                backdropColor: 'transparent',
-                                color: 'rgba(255, 255, 255, 0.6)',
-                                font: {
-                                    weight: 300
-                                }
-                            }
-                        }
-                    }
-                }
+            myChart.setOption(option);
+            
+            window.addEventListener('resize', function() {
+                myChart.resize();
             });
         }
         
         // 初始化学习趋势图表
         function initLearningTrendChart() {
-            const ctx = document.getElementById('learningTrendChart').getContext('2d');
+            const chartDom = document.getElementById('learningTrendChart');
+            const myChart = echarts.init(chartDom);
             
             // 获取最近7天的日期
             const dates = [];
@@ -536,78 +862,319 @@
                         const studyData = JSON.parse(savedData);
                         const seconds = studyData[dateStr] || 0;
                         // 转换为小时
-                        data.push((seconds / 3600).toFixed(1));
+                        data.push(parseFloat((seconds / 3600).toFixed(1)));
                     } catch (error) {
                         data.push(0);
                     }
                 } else {
                     // 模拟数据
-                    data.push((Math.random() * 3 + 1).toFixed(1));
+                    data.push(parseFloat((Math.random() * 3 + 1).toFixed(1)));
                 }
             }
             
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        label: '学习时长（小时）',
-                        data: data,
-                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                        borderColor: 'rgba(16, 185, 129, 0.8)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true,
-                        pointBackgroundColor: 'rgba(255, 255, 255, 1)',
-                        pointBorderColor: 'rgba(16, 185, 129, 1)',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                    }]
+            const option = {
+                tooltip: {
+                    trigger: 'axis'
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: 'rgba(255, 255, 255, 0.7)',
-                                font: {
-                                    weight: 300
-                                }
-                            }
+                xAxis: {
+                    type: 'category',
+                    data: dates,
+                    axisLine: {
+                        lineStyle: {
+                            color: 'rgba(255, 255, 255, 0.3)'
                         }
                     },
-                    scales: {
-                        x: {
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: 'rgba(255, 255, 255, 0.6)',
-                                font: {
-                                    weight: 300
-                                },
-                                maxRotation: 45,
-                                minRotation: 45
-                            }
-                        },
-                        y: {
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: 'rgba(255, 255, 255, 0.6)',
-                                font: {
-                                    weight: 300
-                                }
-                            },
-                            beginAtZero: true
+                    axisLabel: {
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        rotate: 45
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: 'rgba(255, 255, 255, 0.1)'
                         }
                     }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '学习时长（小时）',
+                    nameTextStyle: {
+                        color: 'rgba(255, 255, 255, 0.7)'
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: 'rgba(255, 255, 255, 0.3)'
+                        }
+                    },
+                    axisLabel: {
+                        color: 'rgba(255, 255, 255, 0.7)'
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                },
+                series: [{
+                    name: '学习时长',
+                    type: 'line',
+                    data: data,
+                    smooth: true,
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(16, 185, 129, 0.3)' },
+                            { offset: 1, color: 'rgba(16, 185, 129, 0.05)' }
+                        ])
+                    },
+                    lineStyle: {
+                        color: 'rgba(16, 185, 129, 0.8)',
+                        width: 2
+                    },
+                    itemStyle: {
+                        color: 'rgba(16, 185, 129, 1)'
+                    }
+                }]
+            };
+            
+            myChart.setOption(option);
+            
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            }
+        }
+        
+        // 全局设置管理
+        const GlobalSettings = {
+            // 默认设置
+            defaultSettings: {
+                dataset: 'assistments2009',
+                model: 'tensor_attention',
+                ktModel: 'dkt',
+                adaptive: false,
+                studyGoal: 120,
+                sidebarCollapsed: false
+            },
+            
+            // 加载设置
+            loadSettings() {
+                try {
+                    const saved = localStorage.getItem('globalSettings');
+                    return saved ? JSON.parse(saved) : this.defaultSettings;
+                } catch (error) {
+                    console.error('Failed to load settings:', error);
+                    return this.defaultSettings;
+                }
+            },
+            
+            // 保存设置
+            saveSettings(settings) {
+                try {
+                    localStorage.setItem('globalSettings', JSON.stringify(settings));
+                    return true;
+                } catch (error) {
+                    console.error('Failed to save settings:', error);
+                    return false;
+                }
+            },
+            
+            // 重置默认设置
+            resetSettings() {
+                this.saveSettings(this.defaultSettings);
+                this.applySettings(this.defaultSettings);
+            },
+            
+            // 应用设置到UI
+            applySettings(settings) {
+                document.getElementById('datasetSelect').value = settings.dataset;
+                document.getElementById('modelSelect').value = settings.model;
+                document.getElementById('ktModelSelect').value = settings.ktModel;
+                document.getElementById('adaptiveToggle').checked = settings.adaptive;
+                document.getElementById('studyGoalInput').value = settings.studyGoal;
+                
+                // 应用侧边栏状态
+                this.toggleSidebar(settings.sidebarCollapsed);
+            },
+            
+            // 获取当前设置
+            getCurrentSettings() {
+                return {
+                    dataset: document.getElementById('datasetSelect').value,
+                    model: document.getElementById('modelSelect').value,
+                    ktModel: document.getElementById('ktModelSelect').value,
+                    adaptive: document.getElementById('adaptiveToggle').checked,
+                    studyGoal: parseInt(document.getElementById('studyGoalInput').value) || 120,
+                    sidebarCollapsed: document.querySelector('.settings-sidebar').classList.contains('collapsed')
+                };
+            },
+            
+            // 切换侧边栏状态
+            toggleSidebar(collapsed) {
+                const sidebar = document.querySelector('.settings-sidebar');
+                const container = document.querySelector('.dashboard-container');
+                const toggleBtn = document.getElementById('sidebarToggle');
+                
+                console.log('toggleSidebar called, collapsed:', collapsed);
+                console.log('sidebar:', sidebar);
+                console.log('container:', container);
+                console.log('toggleBtn:', toggleBtn);
+                
+                if (collapsed === undefined) {
+                    collapsed = !sidebar.classList.contains('collapsed');
+                }
+                
+                console.log('final collapsed value:', collapsed);
+                
+                if (collapsed) {
+                    sidebar.classList.add('collapsed');
+                    container.classList.add('sidebar-collapsed');
+                    toggleBtn.innerHTML = '<span>»</span>';
+                    console.log('Sidebar collapsed');
+                } else {
+                    sidebar.classList.remove('collapsed');
+                    container.classList.remove('sidebar-collapsed');
+                    toggleBtn.innerHTML = '<span>«</span>';
+                    console.log('Sidebar expanded');
+                }
+                
+                // 保存状态
+                const settings = this.getCurrentSettings();
+                this.saveSettings(settings);
+            }
+        };
+        
+        // 初始化全局设置
+        function initGlobalSettings() {
+            const settings = GlobalSettings.loadSettings();
+            GlobalSettings.applySettings(settings);
+            
+            // 保存设置按钮
+            document.getElementById('saveSettings').addEventListener('click', function() {
+                const settings = GlobalSettings.getCurrentSettings();
+                if (GlobalSettings.saveSettings(settings)) {
+                    showNotification('设置已保存', 'success');
+                } else {
+                    showNotification('保存失败，请重试', 'error');
                 }
             });
+            
+            // 重置设置按钮
+            document.getElementById('resetSettings').addEventListener('click', function() {
+                if (confirm('确定要重置为默认设置吗？')) {
+                    GlobalSettings.resetSettings();
+                    showNotification('设置已重置为默认值', 'success');
+                }
+            });
+            
+            // 侧边栏收起按钮
+            const sidebarToggleBtn = document.getElementById('sidebarToggle');
+            console.log('sidebarToggleBtn:', sidebarToggleBtn);
+            if (sidebarToggleBtn) {
+                sidebarToggleBtn.addEventListener('click', function() {
+                    console.log('Sidebar toggle button clicked');
+                    GlobalSettings.toggleSidebar();
+                });
+            } else {
+                console.error('sidebarToggle button not found');
+            }
         }
+        
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            // 添加样式
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            // 根据类型设置颜色
+            switch (type) {
+                case 'success':
+                    notification.style.backgroundColor = '#4caf50';
+                    break;
+                case 'error':
+                    notification.style.backgroundColor = '#f44336';
+                    break;
+                case 'warning':
+                    notification.style.backgroundColor = '#ff9800';
+                    break;
+                default:
+                    notification.style.backgroundColor = '#2196f3';
+            }
+            
+            // 添加动画
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // 添加到页面
+            document.body.appendChild(notification);
+            
+            // 3秒后移除
+            setTimeout(() => {
+                notification.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                    if (style.parentNode) {
+                        style.parentNode.removeChild(style);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // 事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStudyData();
+            
+            document.getElementById('startTimer').addEventListener('click', startTimer);
+            document.getElementById('stopTimer').addEventListener('click', stopTimer);
+            document.getElementById('resetTimer').addEventListener('click', resetStudyData);
+            document.getElementById('viewHistory').addEventListener('click', viewHistory);
+            document.getElementById('exportHistory').addEventListener('click', exportHistory);
+            
+            // 关闭弹窗事件
+            document.querySelectorAll('.close-modal').forEach(button => {
+                button.addEventListener('click', closeModal);
+            });
+            
+            // 点击弹窗外部关闭
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('encouragementModal');
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+            
+            // 初始化图表
+            initKnowledgeChart();
+            initLearningTrendChart();
+            
+            // 初始化全局设置
+            initGlobalSettings();
+        });
     </script>
 </body>
 </html>

@@ -15,6 +15,7 @@ from name_mappings import load_mappings, get_user_name, get_skill_name, get_item
 from recommendation import CollaborativeFiltering, ContentBasedRecommender, HybridRecommender
 from learning_path import AdaptiveLearningPath, LearningPathOptimizer
 from chart_config import ChartConfig
+from services.PredictionService import PredictionService
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -1017,3 +1018,54 @@ def api_batch_generate_names(request):
         return JsonResponse({'success': True, 'message': '已批量生成名称'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_predict(request):
+    """预测学生学习表现"""
+    try:
+        data = json.loads(request.body)
+        student_id = data.get('student_id')
+        skill_id = data.get('skill_id')
+        dataset = data.get('dataset', 'assistments_2009_2010')
+
+        if not student_id or not skill_id:
+            return JsonResponse({'code': 400, 'msg': '缺少必要参数'}, status=400)
+
+        # 加载数据
+        df = pd.read_csv(os.path.join('data', dataset, 'preprocessed_data.csv'), sep="\t")
+        
+        # 获取学生数据
+        student_data = df[df['user_id'] == int(student_id)].to_dict('records')
+        
+        # 创建预测服务
+        prediction_service = PredictionService()
+        
+        # 进行预测
+        results = prediction_service.predict(student_data, student_id, skill_id)
+        
+        return JsonResponse({
+            'code': 200,
+            'msg': '预测成功',
+            'data': results
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'code': 500, 'msg': f'预测失败: {str(e)}'}, status=500)
+
+def prediction_page(request):
+    """预测页面"""
+    return render(request, 'prediction.html')
+
+def model_comparison_page(request):
+    """模型对比页面"""
+    return render(request, 'model_comparison.html')
+
+def login_page(request):
+    """登录页面"""
+    return render(request, 'login.html')
+
+def register_page(request):
+    """注册页面"""
+    return render(request, 'register.html')
