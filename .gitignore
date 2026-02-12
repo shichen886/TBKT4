@@ -35,3 +35,10 @@ Thumbs.db
 $Recycle.Bin/
 ehthumbs.db
 Desktop.ini
+
+# Data files
+data/*.csv
+data/*.sql
+**/*.csv
+**/*.sql
+C91093 学习表现/
