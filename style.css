@@ -1,0 +1,756 @@
+/* Knowledge Tracking System - Modern UI Design */
+/* Based on Educational App color palette from design system */
+
+:root {
+    --primary: #4F46E5;
+    --primary-hover: #4338CA;
+    --secondary: #818CF8;
+    --cta: #F97316;
+    --cta-hover: #EA580C;
+    --background: #EEF2FF;
+    --surface: #FFFFFF;
+    --surface-secondary: #F5F3FF;
+    --text-primary: #1E1B4B;
+    --text-secondary: #4B5563;
+    --text-muted: #9CA3AF;
+    --border: #C7D2FE;
+    --border-light: #E0E7FF;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --error: #EF4444;
+    --info: #3B82F6;
+    --shadow-sm: 0 1px 2px 0 rgba(79, 70, 229, 0.05);
+    --shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1), 0 2px 4px -1px rgba(79, 70, 229, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(79, 70, 229, 0.1), 0 4px 6px -2px rgba(79, 70, 229, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(79, 70, 229, 0.1), 0 10px 10px -5px rgba(79, 70, 229, 0.04);
+    --radius-sm: 0.375rem;
+    --radius: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --transition: all 0.2s ease-in-out;
+}
+
+/* Global Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    background-color: var(--background);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+/* Main Container */
+.main .block-container {
+    max-width: 1400px;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    background: linear-gradient(135deg, var(--background) 0%, #F5F3FF 100%);
+    border-radius: var(--radius-xl);
+    margin: 1rem;
+    box-shadow: var(--shadow-lg);
+}
+
+/* Header */
+h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+h2 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+}
+
+/* Sidebar */
+.css-1d391kg {
+    background: linear-gradient(180deg, var(--surface) 0%, var(--surface-secondary) 100%);
+    border-right: 1px solid var(--border-light);
+}
+
+.css-1d391kg .css-17ziqus {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    margin: 0.5rem;
+    box-shadow: var(--shadow);
+}
+
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0.5rem;
+    background: var(--surface);
+    padding: 0.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+}
+
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+    color: white;
+    border-radius: var(--radius);
+    font-weight: 600;
+    box-shadow: var(--shadow);
+}
+
+.stTabs [aria-selected="false"] {
+    color: var(--text-secondary);
+    border-radius: var(--radius);
+    transition: var(--transition);
+}
+
+.stTabs [aria-selected="false"]:hover {
+    background: var(--surface-secondary);
+    color: var(--primary);
+}
+
+/* Cards */
+div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin: 0.75rem 0;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-light);
+    transition: var(--transition);
+}
+
+div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"]:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+/* Metrics */
+[data-testid="stMetricValue"] {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+[data-testid="stMetricDelta"] {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Progress Bar */
+.stProgress > div > div > div > div {
+    background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+    border-radius: var(--radius);
+    transition: width 0.5s ease-in-out;
+}
+
+/* Buttons */
+.stButton > button {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: var(--transition);
+    box-shadow: var(--shadow);
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.stButton > button[kind="secondary"] {
+    background: var(--surface);
+    color: var(--primary);
+    border: 2px solid var(--border);
+}
+
+/* Selectbox */
+.stSelectbox > div > div {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    transition: var(--transition);
+}
+
+.stSelectbox > div > div:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Slider */
+.stSlider > div > div > div {
+    background: var(--border-light);
+}
+
+.stSlider [role="slider"] {
+    background: var(--primary);
+}
+
+/* Info Boxes */
+.stInfo {
+    background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+    border-left: 4px solid var(--info);
+    border-radius: var(--radius);
+}
+
+.stSuccess {
+    background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+    border-left: 4px solid var(--success);
+    border-radius: var(--radius);
+}
+
+.stWarning {
+    background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+    border-left: 4px solid var(--warning);
+    border-radius: var(--radius);
+}
+
+.stError {
+    background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+    border-left: 4px solid var(--error);
+    border-radius: var(--radius);
+}
+
+/* Charts */
+.js-plotly-plot .plotly .modebar {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Columns */
+[data-testid="stHorizontalBlock"] {
+    gap: 1.5rem;
+}
+
+/* Text */
+p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+caption {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+/* Divider */
+hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, var(--border) 50%, transparent 100%);
+    margin: 2rem 0;
+}
+
+/* Glassmorphism Effect for Cards */
+.glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    .main .block-container {
+        padding: 1rem;
+        margin: 0.5rem;
+    }
+    
+    [data-testid="stHorizontalBlock"] {
+        gap: 1rem;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #0F0F23;
+        --surface: #1E1B4B;
+        --surface-secondary: #312E81;
+        --text-primary: #F8FAFC;
+        --text-secondary: #CBD5E1;
+        --text-muted: #94A3B8;
+        --border: #4C1D95;
+        --border-light: #5B21B6;
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--surface-secondary);
+    border-radius: var(--radius);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: var(--radius);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-hover);
+}
+
+/* Focus States */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Loading Animation */
+.stSpinner > div {
+    border-color: var(--border);
+    border-top-color: var(--primary);
+}
+
+/* Responsive Design Improvements */
+@media (max-width: 1024px) {
+    .main .block-container {
+        margin: 0.5rem;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    [data-testid="stHorizontalBlock"] {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    [data-testid="stHorizontalBlock"] > div {
+        width: 100% !important;
+    }
+}
+
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    h2 {
+        font-size: 1.25rem;
+    }
+    
+    h3 {
+        font-size: 1.1rem;
+    }
+    
+    .main .block-container {
+        padding: 1rem;
+        margin: 0.25rem;
+    }
+    
+    [data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
+        padding: 1rem;
+        margin: 0.5rem 0;
+    }
+    
+    .stTabs [data-baseweb="tab-list"] {
+        flex-wrap: wrap;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        flex: 1 1 auto;
+        min-width: 120px;
+        font-size: 0.875rem;
+    }
+    
+    [data-testid="stMetricValue"] {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    h2 {
+        font-size: 1.1rem;
+    }
+    
+    .main .block-container {
+        padding: 0.75rem;
+        margin: 0;
+        border-radius: 0;
+    }
+    
+    .stButton > button {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    [data-testid="stMetricValue"] {
+        font-size: 1.25rem;
+    }
+}
+
+/* Interactive Card Effects */
+div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
+    cursor: default;
+    transition: var(--transition);
+}
+
+div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"]:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
+/* Button Hover Effects */
+.stButton > button {
+    position: relative;
+    overflow: hidden;
+}
+
+.stButton > button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.stButton > button:active::after {
+    width: 300px;
+    height: 300px;
+}
+
+/* Input Focus Effects */
+.stTextInput > div > div > input:focus,
+.stSelectbox > div > div > div:focus,
+.stNumberInput > div > div > input:focus {
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+    border-color: var(--primary);
+}
+
+/* Tab Transition Effects */
+.stTabs [data-baseweb="tab"] {
+    transition: all 0.3s ease;
+}
+
+.stTabs [data-baseweb="tab"]:hover {
+    transform: translateY(-2px);
+}
+
+/* Progress Bar Animation */
+.stProgress > div > div > div > div {
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Metric Card Animation */
+[data-testid="stMetricValue"] {
+    transition: all 0.3s ease;
+}
+
+[data-testid="stMetricValue"]:hover {
+    transform: scale(1.05);
+}
+
+/* Smooth Scroll */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Card Hover Glow Effect */
+div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: var(--radius-lg);
+    padding: 2px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"]:hover::before {
+    opacity: 1;
+}
+
+/* Loading Skeleton Animation */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+}
+
+/* Tooltip Enhancement */
+.stTooltip {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: var(--shadow-lg) !important;
+}
+
+/* Print Styles */
+@media print {
+    .stSidebar {
+        display: none !important;
+    }
+    
+    .stTabs {
+        display: none !important;
+    }
+    
+    .main .block-container {
+        box-shadow: none;
+        margin: 0;
+        padding: 0;
+    }
+}
+
+/* Accessibility - Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    :root {
+        --border: #000000;
+        --text-secondary: #000000;
+    }
+    
+    div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
+        border: 2px solid var(--border);
+    }
+}
+
+/* Custom Scrollbar for Sidebar */
+.css-1d391kg::-webkit-scrollbar {
+    width: 6px;
+}
+
+.css-1d391kg::-webkit-scrollbar-track {
+    background: var(--surface-secondary);
+}
+
+.css-1d391kg::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+/* Expander Animation */
+details > summary {
+    transition: all 0.3s ease;
+}
+
+details > summary:hover {
+    background: var(--surface-secondary);
+}
+
+/* File Uploader Styling */
+.stFileUploader {
+    border: 2px dashed var(--border) !important;
+    border-radius: var(--radius-lg) !important;
+    transition: var(--transition) !important;
+}
+
+.stFileUploader:hover {
+    border-color: var(--primary) !important;
+    background: var(--surface-secondary) !important;
+}
+
+/* Alert Box Styling */
+.stAlert {
+    border-radius: var(--radius) !important;
+    box-shadow: var(--shadow) !important;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Dataframe Styling */
+[data-testid="stDataFrame"] {
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+[data-testid="stDataFrame"] table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+[data-testid="stDataFrame"] th {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+    font-weight: 600;
+}
+
+[data-testid="stDataFrame"] tr:hover {
+    background: var(--surface-secondary);
+}
+
+/* Checkbox Styling */
+.stCheckbox > label {
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.stCheckbox > label:hover {
+    color: var(--primary);
+}
+
+/* Radio Button Styling */
+.stRadio > div {
+    gap: 0.5rem;
+}
+
+.stRadio > label {
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.stRadio > label:hover {
+    color: var(--primary);
+}
+
+/* Select Option Styling */
+.stSelectbox option:hover {
+    background: var(--primary);
+    color: white;
+}
+
+/* Text Area Styling */
+.stTextArea > div > div > textarea {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    transition: var(--transition);
+}
+
+.stTextArea > div > div > textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Number Input Styling */
+.stNumberInput > div > div > input {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    transition: var(--transition);
+}
+
+.stNumberInput > div > div > input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Date Input Styling */
+.stDateInput > div > div > input {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    transition: var(--transition);
+}
+
+.stDateInput > div > div > input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Time Input Styling */
+.stTimeInput > div > div > input {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    transition: var(--transition);
+}
+
+.stTimeInput > div > div > input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Color Picker Styling */
+.stColorPicker > div > div {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    transition: var(--transition);
+}
+
+.stColorPicker > div > div:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}

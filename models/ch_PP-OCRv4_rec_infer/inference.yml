@@ -1,0 +1,32 @@
+Global:
+  algorithm:
+    type: CRNN
+  model_dir: ./models/ch_PP-OCRv4_rec_infer
+  device: gpu
+  enable_mkldnn: false
+  cpu_threads: 10
+  enable_benchmark: false
+  enable_profile: false
+  to_onnx: false
+  infer_img: ./doc/imgs_en/img_10.jpg
+  save_res_path: ./inference_results
+
+Rec:
+  name: rec
+  data_shape:
+    batch_size: 6
+    image_shape: [3, 32, 320]
+  preprocess_op:
+    Resize:
+      size: [320, 32]
+      resize_type: 'long'
+    NormalizeImage:
+      scale: 1./255.
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+    ToCHWImage:
+  postprocess_op:
+    CTCLabelDecode:
+      name: CTCLabelDecode
+      character_dict_path: ./ppocr/utils/ppocr_keys_v1.txt
+      use_space_char: true

@@ -1,0 +1,71 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生学习分析</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+    <div class="background-texture"></div>
+    
+    <div class="dashboard-container">
+        <nav class="dashboard-nav">
+            <h1 class="nav-title">📊 学生学习分析</h1>
+            <div class="nav-links">
+                <a href="/dashboard/" class="nav-link">仪表盘</a>
+                <a href="/recommendation/" class="nav-link">学习推荐</a>
+                <a href="/learning-path/" class="nav-link">学习路径</a>
+                <a href="/assessment/" class="nav-link">教育评估</a>
+                <a href="/name-customization/" class="nav-link">自定义名称</a>
+                <a href="/upload/" class="nav-link">上传数据</a>
+            </div>
+        </nav>
+        
+        <div class="dashboard-content">
+            <div class="settings-panel">
+                <div class="setting-group">
+                    <label>选择数据集</label>
+                    <select id="datasetSelect" class="styled-select">
+                        <option value="">加载中...</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label>选择学生</label>
+                    <select id="userSelect" class="styled-select" disabled>
+                        <option value="">请先选择数据集</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label>分析类型</label>
+                    <select id="analysisType" class="styled-select">
+                        <option value="skills">知识点掌握情况</option>
+                        <option value="trend">答题趋势</option>
+                        <option value="errors">错误分析</option>
+                    </select>
+                </div>
+                
+                <button id="analyzeBtn" class="primary-button">开始分析</button>
+            </div>
+            
+            <div class="results-panel">
+                <div class="chart-card" id="chartCard" style="display: none;">
+                    <h3 id="chartTitle">分析结果</h3>
+                    <div id="chartContainer" class="chart-container"></div>
+                </div>
+                
+                <div class="weak-skills-card" id="weakSkillsCard" style="display: none;">
+                    <h3>薄弱知识点识别</h3>
+                    <div id="weakSkillsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{% static 'js/analysis.js' %}"></script>
+</body>
+</html>

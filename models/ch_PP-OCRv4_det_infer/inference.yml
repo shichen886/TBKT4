@@ -1,0 +1,35 @@
+Global:
+  algorithm:
+    type: DB
+  model_dir: ./models/ch_PP-OCRv4_det_infer
+  device: gpu
+  enable_mkldnn: false
+  cpu_threads: 10
+  enable_benchmark: false
+  enable_profile: false
+  to_onnx: false
+  infer_img: ./doc/imgs_en/img_10.jpg
+  save_res_path: ./inference_results
+
+Det:
+  name: det
+  data_shape:
+    batch_size: 1
+    image_shape: [960, 960, 3]
+  preprocess_op:
+    Resize:
+      size: [960, 960]
+      resize_type: 'long'
+    NormalizeImage:
+      scale: 1./255.
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+    ToCHWImage:
+  postprocess_op:
+    DBPostProcess:
+      name: DBPostProcess
+      thresh: 0.3
+      box_thresh: 0.5
+      max_candidates: 1000
+      unclip_ratio: 1.5
+      use_dilation: false

@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "content": "n\na\no\nt\no\ne\ne\ne\ne\ne\ne\ne\ni\ne\ne",
+    "skill_id": 0,
+    "difficulty": "简单",
+    "image": "1.jpg"
+  },
+  {
+    "id": 2,
+    "content": "【例1.7】设两个相互独立的事件A和B都不发生的概率为一，A发生B不发生的概率与B发生A不\n9\n发生的概率相等，则P（A）=\n1\n【解析】由题意知，P(AB)=\n，P(AB)=P(BA），由减法公式有\n9\nP(AB）=P（A）-P（AB)，P(BA）=P(B）-P（AB)，\n故有P（A）=P（B），因A，B相互独立，则A与B相互独立，所以\nP(AB)=P(A)P(B)=[P(A)\n72\n7\n1\n9",
+    "skill_id": 0,
+    "difficulty": "中等",
+    "image": "2.jpg"
+  },
+  {
+    "id": 3,
+    "content": "【例1.7】设两个相互独立的事件A和B都不发生的概率为一，A发生B不发生的概率与B发生A不\r\n9\r\n发生的概率相等，则P（A）=\r\n1\r\n【解析】由题意知，P(AB)=\r\n1\r\n，P(AB)=P(BA)，由减法公式有\r\n4\r\n9\r\nA\r\nP(AB)=P（A）-P(AB)，P(BA)=P(B）-P(AB),\r\n故有P（A）=P（B），因A，B相互独立，则A与B相互独立，所以\r\nP(AB)=P(A)P(B)=[P(A)\r\n2\r\n7\r\n1\r\n/\r\n9",
+    "skill_id": 0,
+    "difficulty": "中等",
+    "image": "3.jpg"
+  }
+]

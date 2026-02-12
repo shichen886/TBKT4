@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自定义名称</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="background-texture"></div>
+    
+    <div class="dashboard-container">
+        <nav class="dashboard-nav">
+            <h1 class="nav-title">🏷️ 自定义名称</h1>
+            <div class="nav-links">
+                <a href="/dashboard/" class="nav-link">仪表盘</a>
+                <a href="/recommendation/" class="nav-link">学习推荐</a>
+                <a href="/analysis/" class="nav-link">学习分析</a>
+                <a href="/learning-path/" class="nav-link">学习路径</a>
+                <a href="/assessment/" class="nav-link">教育评估</a>
+                <a href="/upload/" class="nav-link">上传数据</a>
+            </div>
+        </nav>
+        
+        <div class="dashboard-content">
+            <div class="name-customization-panel">
+                <div class="type-selector">
+                    <label>选择要自定义的类型</label>
+                    <select id="nameType" class="styled-select">
+                        <option value="student">学生名称</option>
+                        <option value="skill">知识点名称</option>
+                        <option value="item">题目名称</option>
+                    </select>
+                </div>
+                
+                <div class="dataset-selector">
+                    <label>选择数据集</label>
+                    <select id="datasetSelect" class="styled-select">
+                        <option value="">请选择数据集...</option>
+                    </select>
+                </div>
+                
+                <div class="name-form" id="nameForm" style="display: none;">
+                    <div class="form-group">
+                        <label>选择ID</label>
+                        <select id="idSelect" class="styled-select">
+                            <option value="">请先选择数据集...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>当前名称</label>
+                        <input type="text" id="currentName" readonly class="readonly-input">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>新名称</label>
+                        <input type="text" id="newName" class="styled-input" placeholder="输入新名称">
+                    </div>
+                    
+                    <div class="button-group">
+                        <button id="saveNameBtn" class="primary-button">保存名称</button>
+                        <button id="autoGenerateBtn" class="secondary-button">自动生成名称</button>
+                        <button id="batchGenerateBtn" class="secondary-button" style="display: none;">批量生成名称</button>
+                    </div>
+                </div>
+                
+                <div class="stats-section" id="statsSection" style="display: none;">
+                    <h3>当前名称映射</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="studentCount">0</div>
+                            <div class="stat-label">学生名称数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="skillCount">0</div>
+                            <div class="stat-label">知识点名称数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="itemCount">0</div>
+                            <div class="stat-label">题目名称数</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{% static 'js/name-customization.js' %}"></script>
+</body>
+</html>

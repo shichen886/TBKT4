@@ -1,0 +1,37 @@
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# Python
+venv/
+ENV/
+env/
+build/
+dist/
+*.egg-info/
+
+# Project specific
+runs/
+save/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Windows
+$Recycle.Bin/
+ehthumbs.db
+Desktop.ini

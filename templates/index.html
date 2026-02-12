@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能知识追踪系统</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="background-texture"></div>
+    
+    <div class="container">
+        <h1 class="main-title" data-text="智能知识追踪系统">智能知识追踪系统</h1>
+        <p class="subtitle">探索知识的海洋</p>
+        <button class="enter-button" id="enterButton">
+            <span class="button-text">进入</span>
+        </button>
+    </div>
+    
+    <div class="water-drop-overlay" id="waterDropOverlay"></div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

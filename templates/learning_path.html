@@ -1,0 +1,71 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习路径优化</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="background-texture"></div>
+    
+    <div class="dashboard-container">
+        <nav class="dashboard-nav">
+            <h1 class="nav-title">🗺️ 学习路径优化</h1>
+            <div class="nav-links">
+                <a href="/dashboard/" class="nav-link">仪表盘</a>
+                <a href="/recommendation/" class="nav-link">学习推荐</a>
+                <a href="/analysis/" class="nav-link">学习分析</a>
+                <a href="/assessment/" class="nav-link">教育评估</a>
+                <a href="/name-customization/" class="nav-link">自定义名称</a>
+                <a href="/upload/" class="nav-link">上传数据</a>
+            </div>
+        </nav>
+        
+        <div class="dashboard-content">
+            <div class="settings-panel">
+                <div class="setting-group">
+                    <label>选择数据集</label>
+                    <select id="datasetSelect" class="styled-select">
+                        <option value="">加载中...</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label>选择学生</label>
+                    <select id="userSelect" class="styled-select" disabled>
+                        <option value="">请先选择数据集</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label>学习目标</label>
+                    <select id="goalSelect" class="styled-select">
+                        <option value="comprehensive">全面掌握</option>
+                        <option value="breakthrough">重点突破</option>
+                        <option value="review">查漏补缺</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label>路径长度</label>
+                    <input type="range" id="pathLength" min="5" max="20" value="10" class="styled-range">
+                    <span id="pathLengthValue">10</span>
+                </div>
+                
+                <button id="generatePathBtn" class="primary-button">生成学习路径</button>
+            </div>
+            
+            <div class="results-panel">
+                <div class="path-card" id="pathCard" style="display: none;">
+                    <h3>📅 个性化学习计划</h3>
+                    <div id="pathContainer" class="path-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{% static 'js/learning-path.js' %}"></script>
+</body>
+</html>

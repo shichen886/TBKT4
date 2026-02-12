@@ -1,0 +1,111 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个性化学习推荐</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+    <div class="background-texture"></div>
+    
+    <div class="dashboard-container">
+        <nav class="dashboard-nav">
+            <h1 class="nav-title">🎯 个性化学习推荐</h1>
+            <div class="nav-links">
+                <a href="/dashboard/" class="nav-link">仪表盘</a>
+                <a href="/analysis/" class="nav-link">学习分析</a>
+                <a href="/learning-path/" class="nav-link">学习路径</a>
+                <a href="/assessment/" class="nav-link">教育评估</a>
+                <a href="/name-customization/" class="nav-link">自定义名称</a>
+                <a href="/upload/" class="nav-link">上传数据</a>
+            </div>
+        </nav>
+        
+        <div class="dashboard-content">
+            <div class="settings-panel">
+                <div class="setting-group">
+                    <label>选择数据集</label>
+                    <select id="datasetSelect" class="styled-select">
+                        <option value="">加载中...</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label>选择学生</label>
+                    <select id="userSelect" class="styled-select" disabled>
+                        <option value="">请先选择数据集</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label>推荐难度</label>
+                    <select id="difficultySelect" class="styled-select">
+                        <option value="balanced">均衡（推荐薄弱知识点）</option>
+                        <option value="easy">简单（巩固已掌握）</option>
+                        <option value="hard">困难（挑战高难度）</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label>推荐题目数量</label>
+                    <input type="range" id="numQuestions" min="1" max="10" value="5" class="styled-range">
+                    <span id="numQuestionsValue">5</span>
+                </div>
+                
+                <div class="setting-group">
+                    <label>推荐方法</label>
+                    <select id="methodSelect" class="styled-select">
+                        <option value="hybrid">混合推荐</option>
+                        <option value="collaborative">协同过滤</option>
+                        <option value="content">基于内容</option>
+                        <option value="traditional">传统方法</option>
+                    </select>
+                </div>
+                
+                <button id="generateBtn" class="primary-button">生成推荐</button>
+            </div>
+            
+            <div class="results-panel">
+                <div class="user-info-card" id="userInfoCard" style="display: none;">
+                    <h3>学生信息</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">总答题数</span>
+                            <span class="info-value" id="totalQuestions">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">正确率</span>
+                            <span class="info-value" id="accuracy">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">涉及知识点</span>
+                            <span class="info-value" id="uniqueSkills">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="recommendations-card" id="recommendationsCard" style="display: none;">
+                    <h3>📋 推荐题目</h3>
+                    <div id="recommendationsList"></div>
+                </div>
+                
+                <div class="prediction-card" id="predictionCard" style="display: none;">
+                    <h3>🔮 预测下一题</h3>
+                    <div class="prediction-result">
+                        <div class="prediction-metric">
+                            <span class="metric-label">预测正确率</span>
+                            <span class="metric-value" id="predictionValue">-</span>
+                        </div>
+                        <div class="prediction-status" id="predictionStatus">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{% static 'js/recommendation.js' %}"></script>
+</body>
+</html>

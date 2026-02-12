@@ -1,0 +1,613 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识追踪仪表盘</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="background-texture"></div>
+    
+    <div class="dashboard-container">
+        <nav class="dashboard-nav">
+            <h1 class="nav-title">知识追踪系统</h1>
+            <div class="nav-links">
+                <a href="/recommendation/" class="nav-link">学习推荐</a>
+                <a href="/analysis/" class="nav-link">学习分析</a>
+                <a href="/learning-path/" class="nav-link">学习路径</a>
+                <a href="/assessment/" class="nav-link">教育评估</a>
+                <a href="/name-customization/" class="nav-link">自定义名称</a>
+                <a href="/upload/" class="nav-link">上传数据</a>
+                <a href="/" class="nav-link">返回首页</a>
+            </div>
+        </nav>
+        
+        <div class="dashboard-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-info">
+                        <h3>知识点统计</h3>
+                        <p class="stat-value">128</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-info">
+                        <h3>学习进度</h3>
+                        <p class="stat-value">75%</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <h3>正确率</h3>
+                        <p class="stat-value">82%</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-info">
+                        <h3>学习时长</h3>
+                        <p class="stat-value" id="totalStudyTime">0h 0m</p>
+                        <p class="today-study-time" id="todayStudyTime">今日: 0h 0m 0s</p>
+                        <div class="timer-controls">
+                            <button id="startTimer" class="primary-button">开始学习</button>
+                            <button id="stopTimer" class="primary-button" disabled>结束学习</button>
+                            <button id="resetTimer" class="secondary-button">重置数据</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="charts-section">
+                <div class="chart-card">
+                    <h3>知识点掌握情况</h3>
+                    <div class="chart-container">
+                        <canvas id="knowledgeChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>学习趋势</h3>
+                    <div class="chart-container">
+                        <canvas id="learningTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 学习历史记录 -->
+            <div class="history-section">
+                <h3 class="section-title">学习历史记录</h3>
+                <div class="history-controls">
+                    <button id="viewHistory" class="primary-button">查看历史</button>
+                    <button id="exportHistory" class="secondary-button">导出数据</button>
+                </div>
+                <div id="historyTable" class="history-table">
+                    <p class="history-placeholder">点击上方按钮查看历史学习记录</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 鼓励弹窗 -->
+    <div id="encouragementModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🎉 学习鼓励</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="encouragementMessage">太棒了！继续保持！</p>
+            </div>
+            <div class="modal-footer">
+                <button class="primary-button close-modal">谢谢</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 计时器功能
+        let timerInterval;
+        let startTime;
+        let todayStudySeconds = 0;
+        let totalStudySeconds = 0; // 初始值0小时，从本地存储加载实际数据
+        
+        // 获取今天的日期字符串（YYYY-MM-DD）
+        function getTodayDate() {
+            const now = new Date();
+            return now.toISOString().split('T')[0];
+        }
+        
+        // 从本地存储加载数据
+        function loadStudyData() {
+            const today = getTodayDate();
+            const savedData = localStorage.getItem('studyData');
+            
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    // 检查数据有效性
+                    if (data[today] !== undefined) {
+                        todayStudySeconds = parseInt(data[today]) || 0;
+                    }
+                    if (data.total !== undefined) {
+                        totalStudySeconds = parseInt(data.total) || 0;
+                    }
+                } catch (error) {
+                    console.error('Failed to parse study data:', error);
+                    // 如果解析失败，重置数据
+                    todayStudySeconds = 0;
+                    totalStudySeconds = 0;
+                    localStorage.removeItem('studyData');
+                }
+            }
+            
+            updateDisplay();
+        }
+        
+        // 重置所有学习数据
+        function resetStudyData() {
+            if (confirm('确定要重置所有学习数据吗？此操作不可恢复。')) {
+                localStorage.removeItem('studyData');
+                localStorage.removeItem('shownEncouragements');
+                todayStudySeconds = 0;
+                totalStudySeconds = 0;
+                updateDisplay();
+                alert('学习数据已重置');
+            }
+        }
+        
+        // 保存数据到本地存储
+        function saveStudyData() {
+            const today = getTodayDate();
+            const savedData = localStorage.getItem('studyData');
+            let data = savedData ? JSON.parse(savedData) : {};
+            
+            data[today] = todayStudySeconds;
+            data.total = totalStudySeconds;
+            
+            localStorage.setItem('studyData', JSON.stringify(data));
+        }
+        
+        // 更新显示
+        function updateDisplay() {
+            // 更新今日学习时长
+            const todayHours = Math.floor(todayStudySeconds / 3600);
+            const todayMinutes = Math.floor((todayStudySeconds % 3600) / 60);
+            const todaySeconds = todayStudySeconds % 60;
+            document.getElementById('todayStudyTime').textContent = `今日: ${todayHours}h ${todayMinutes}m ${todaySeconds}s`;
+            
+            // 更新总学习时长
+            const totalHours = Math.floor(totalStudySeconds / 3600);
+            const totalMinutes = Math.floor((totalStudySeconds % 3600) / 60);
+            document.getElementById('totalStudyTime').textContent = `${totalHours}h ${totalMinutes}m`;
+        }
+        
+        // 显示鼓励弹窗
+        function showEncouragementPopup(minutes) {
+            const messages = {
+                30: "🎉 太棒了！你已经学习了30分钟，继续保持！",
+                60: "🚀 优秀！你已经专注学习了1小时，学习效率真高！",
+                120: "🌟 太厉害了！2小时的持续学习，你是真正的学习达人！",
+                180: "🏆 超级学霸！3小时的学习时间，你的努力一定会有回报！",
+                240: "💎 学习大师！4小时的专注，你正在创造奇迹！",
+                300: "🔥 传奇学习者！5小时的学习，你已经超越了大多数人！"
+            };
+            
+            if (messages[minutes]) {
+                document.getElementById('encouragementMessage').textContent = messages[minutes];
+                document.getElementById('encouragementModal').style.display = 'flex';
+            }
+        }
+        
+        // 检查是否需要显示鼓励弹窗
+        function checkEncouragement() {
+            const minutes = Math.floor(todayStudySeconds / 60);
+            
+            // 检查关键时间点
+            if (minutes === 30 || minutes === 60 || minutes === 120 || minutes === 180 || minutes === 240 || minutes === 300) {
+                // 检查是否已经显示过该时间点的弹窗
+                const today = getTodayDate();
+                const shownEncouragements = JSON.parse(localStorage.getItem('shownEncouragements') || '{}');
+                
+                if (!shownEncouragements[today] || !shownEncouragements[today][minutes]) {
+                    showEncouragementPopup(minutes);
+                    
+                    // 标记该时间点的弹窗已显示
+                    if (!shownEncouragements[today]) {
+                        shownEncouragements[today] = {};
+                    }
+                    shownEncouragements[today][minutes] = true;
+                    localStorage.setItem('shownEncouragements', JSON.stringify(shownEncouragements));
+                }
+            }
+        }
+        
+        // 开始计时器
+        function startTimer() {
+            startTime = Date.now();
+            document.getElementById('startTimer').disabled = true;
+            document.getElementById('stopTimer').disabled = false;
+            
+            timerInterval = setInterval(() => {
+                const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+                todayStudySeconds += elapsedSeconds;
+                totalStudySeconds += elapsedSeconds;
+                startTime = Date.now();
+                
+                updateDisplay();
+                saveStudyData();
+                checkEncouragement();
+            }, 1000);
+        }
+        
+        // 停止计时器
+        function stopTimer() {
+            clearInterval(timerInterval);
+            document.getElementById('startTimer').disabled = false;
+            document.getElementById('stopTimer').disabled = true;
+            
+            saveStudyData();
+        }
+        
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('encouragementModal').style.display = 'none';
+        }
+        
+        // 查看历史记录
+        function viewHistory() {
+            const savedData = localStorage.getItem('studyData');
+            const historyTable = document.getElementById('historyTable');
+            
+            if (!savedData) {
+                historyTable.innerHTML = '<p class="history-placeholder">暂无学习历史记录</p>';
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(savedData);
+                const totalSeconds = data.total || 0;
+                
+                // 提取每日记录（排除total字段）
+                const dailyRecords = [];
+                for (const [date, seconds] of Object.entries(data)) {
+                    if (date !== 'total') {
+                        dailyRecords.push({ date, seconds: parseInt(seconds) || 0 });
+                    }
+                }
+                
+                // 按日期排序（最新的在前）
+                dailyRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                // 生成表格HTML
+                let tableHTML = `
+                    <div class="history-summary">
+                        <div class="summary-item">
+                            <span class="summary-label">总学习天数：</span>
+                            <span class="summary-value">${dailyRecords.length}天</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">总学习时长：</span>
+                            <span class="summary-value">${formatTime(totalSeconds)}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">日均学习时长：</span>
+                            <span class="summary-value">${dailyRecords.length > 0 ? formatTime(Math.round(totalSeconds / dailyRecords.length)) : '0h 0m'}</span>
+                        </div>
+                    </div>
+                    <table class="history-data-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>学习时长</th>
+                                <th>时间段</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                // 添加每日记录
+                for (const record of dailyRecords) {
+                    const hours = Math.floor(record.seconds / 3600);
+                    const minutes = Math.floor((record.seconds % 3600) / 60);
+                    const seconds = record.seconds % 60;
+                    
+                    // 时间段分类
+                    let timeCategory = '短期学习';
+                    if (record.seconds >= 3600) timeCategory = '深度学习';
+                    else if (record.seconds >= 1800) timeCategory = '中度学习';
+                    
+                    tableHTML += `
+                        <tr>
+                            <td>${formatDate(record.date)}</td>
+                            <td>${hours}h ${minutes}m ${seconds}s</td>
+                            <td>${timeCategory}</td>
+                        </tr>
+                    `;
+                }
+                
+                tableHTML += `
+                        </tbody>
+                    </table>
+                `;
+                
+                historyTable.innerHTML = tableHTML;
+            } catch (error) {
+                console.error('Failed to view history:', error);
+                historyTable.innerHTML = '<p class="history-placeholder">历史记录加载失败</p>';
+            }
+        }
+        
+        // 导出历史记录
+        function exportHistory() {
+            const savedData = localStorage.getItem('studyData');
+            
+            if (!savedData) {
+                alert('暂无学习历史记录可导出');
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(savedData);
+                
+                // 提取每日记录（排除total字段）
+                const dailyRecords = [];
+                for (const [date, seconds] of Object.entries(data)) {
+                    if (date !== 'total') {
+                        const hours = Math.floor(seconds / 3600);
+                        const minutes = Math.floor((seconds % 3600) / 60);
+                        const secondsLeft = seconds % 60;
+                        
+                        dailyRecords.push({
+                            date: formatDate(date),
+                            hours,
+                            minutes,
+                            seconds: secondsLeft,
+                            total_seconds: seconds,
+                            formatted_time: `${hours}h ${minutes}m ${secondsLeft}s`
+                        });
+                    }
+                }
+                
+                // 按日期排序
+                dailyRecords.sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                // 生成CSV内容
+                const csvHeader = '日期,学习时长(小时),学习时长(分钟),学习时长(秒),总秒数,格式化时间\n';
+                const csvRows = dailyRecords.map(record => 
+                    `${record.date},${record.hours},${record.minutes},${record.seconds},${record.total_seconds},"${record.formatted_time}"`
+                ).join('\n');
+                
+                const csvContent = csvHeader + csvRows;
+                
+                // 创建下载链接
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', `学习历史记录_${getTodayDate()}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                alert('学习历史记录已导出为CSV文件');
+            } catch (error) {
+                console.error('Failed to export history:', error);
+                alert('导出失败，请重试');
+            }
+        }
+        
+        // 格式化日期（YYYY-MM-DD 转为 YYYY年MM月DD日）
+        function formatDate(dateString) {
+            const parts = dateString.split('-');
+            if (parts.length === 3) {
+                return `${parts[0]}年${parts[1]}月${parts[2]}日`;
+            }
+            return dateString;
+        }
+        
+        // 格式化时间（秒数转为时分秒）
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            return `${hours}h ${minutes}m`;
+        }
+        
+        // 事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStudyData();
+            
+            document.getElementById('startTimer').addEventListener('click', startTimer);
+            document.getElementById('stopTimer').addEventListener('click', stopTimer);
+            document.getElementById('resetTimer').addEventListener('click', resetStudyData);
+            document.getElementById('viewHistory').addEventListener('click', viewHistory);
+            document.getElementById('exportHistory').addEventListener('click', exportHistory);
+            
+            // 关闭弹窗事件
+            document.querySelectorAll('.close-modal').forEach(button => {
+                button.addEventListener('click', closeModal);
+            });
+            
+            // 点击弹窗外部关闭
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('encouragementModal');
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+            
+            // 初始化图表
+            initKnowledgeChart();
+            initLearningTrendChart();
+        });
+        
+        // 初始化知识点掌握情况图表
+        function initKnowledgeChart() {
+            const ctx = document.getElementById('knowledgeChart').getContext('2d');
+            
+            // 模拟知识点掌握数据
+            const knowledgeData = {
+                labels: ['数学', '语文', '英语', '物理', '化学', '生物', '历史', '地理'],
+                datasets: [{
+                    label: '知识点掌握程度',
+                    data: [85, 78, 92, 65, 70, 80, 75, 68],
+                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                    borderColor: 'rgba(79, 70, 229, 0.8)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(255, 255, 255, 1)',
+                    pointBorderColor: 'rgba(79, 70, 229, 1)',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            };
+            
+            new Chart(ctx, {
+                type: 'radar',
+                data: knowledgeData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: {
+                                    weight: 300
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            pointLabels: {
+                                color: 'rgba(255, 255, 255, 0.8)',
+                                font: {
+                                    weight: 300
+                                }
+                            },
+                            ticks: {
+                                backdropColor: 'transparent',
+                                color: 'rgba(255, 255, 255, 0.6)',
+                                font: {
+                                    weight: 300
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化学习趋势图表
+        function initLearningTrendChart() {
+            const ctx = document.getElementById('learningTrendChart').getContext('2d');
+            
+            // 获取最近7天的日期
+            const dates = [];
+            const data = [];
+            const today = new Date();
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                dates.push(formatDate(dateStr));
+                
+                // 从本地存储获取数据
+                const savedData = localStorage.getItem('studyData');
+                if (savedData) {
+                    try {
+                        const studyData = JSON.parse(savedData);
+                        const seconds = studyData[dateStr] || 0;
+                        // 转换为小时
+                        data.push((seconds / 3600).toFixed(1));
+                    } catch (error) {
+                        data.push(0);
+                    }
+                } else {
+                    // 模拟数据
+                    data.push((Math.random() * 3 + 1).toFixed(1));
+                }
+            }
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: '学习时长（小时）',
+                        data: data,
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderColor: 'rgba(16, 185, 129, 0.8)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: 'rgba(255, 255, 255, 1)',
+                        pointBorderColor: 'rgba(16, 185, 129, 1)',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: {
+                                    weight: 300
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.6)',
+                                font: {
+                                    weight: 300
+                                },
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.6)',
+                                font: {
+                                    weight: 300
+                                }
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
