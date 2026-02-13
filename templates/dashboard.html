@@ -8,6 +8,101 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <script src="{% static 'js/echarts.min.js' %}"></script>
     <style>
+        /* 顶部横向导航栏样式 */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(135deg, #a0e7ff 0%, #007acc 100%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+        }
+
+        .nav-items {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            overflow-x: auto;
+            max-width: calc(100% - 200px);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+        }
+
+        .nav-items::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .nav-items::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .nav-items::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 2px;
+        }
+
+        .nav-item {
+            padding: 0.6rem 1.2rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.3);
+            font-weight: 600;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-button {
+            padding: 0.6rem 1.2rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-button.logout {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-button.logout:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 调整主容器以适应导航栏 */
+        .dashboard-container {
+            margin-top: 60px;
+        }
+
         /* 全局设置侧边栏样式 */
         .settings-sidebar {
             width: 240px;
@@ -231,6 +326,57 @@
             overflow-y: auto;
         }
         
+        /* 图表样式 */
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .chart-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .chart-card h3 {
+            color: #007acc;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 350px;
+            position: relative;
+        }
+        
+        .chart-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        @media (max-width: 1200px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 280px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px;
+            }
+        }
+        
         @media (max-width: 1200px) {
             .dashboard-container {
                 grid-template-columns: 220px 1fr;
@@ -296,6 +442,24 @@
     </style>
 </head>
 <body>
+    <!-- 顶部横向导航栏 -->
+    <nav class="top-nav">
+        <div class="nav-items">
+            <a href="/" class="nav-item">🏠 首页</a>
+            <a href="/dashboard/" class="nav-item active">📊 仪表盘</a>
+            <a href="/prediction/" class="nav-item">🔮 学习预测</a>
+            <a href="/recommendation/" class="nav-item">🎯 智能推荐</a>
+            <a href="/learning_path/" class="nav-item">🛤️ 学习路径</a>
+            <a href="/model_comparison/" class="nav-item">⚖️ 模型对比</a>
+            <a href="/heatmap/" class="nav-item">🌡️ 知识热力图</a>
+            <a href="/analysis/" class="nav-item">📈 数据分析</a>
+            <a href="/assessment/" class="nav-item">📝 教育评估</a>
+        </div>
+        <div class="nav-actions">
+            <a href="/logout/" class="nav-button logout">🚪 退出登录</a>
+        </div>
+    </nav>
+
     <div class="background-texture"></div>
     
     <div class="dashboard-container">
@@ -778,14 +942,35 @@
             // 初始化图表
             initKnowledgeChart();
             initLearningTrendChart();
+            
+            // 初始化全局设置
+            initGlobalSettings();
         });
         
         // 初始化知识点掌握情况图表
         function initKnowledgeChart() {
             const chartDom = document.getElementById('knowledgeChart');
+            if (!chartDom) {
+                console.error('knowledgeChart element not found');
+                return;
+            }
+            
             const myChart = echarts.init(chartDom);
             
             const option = {
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    borderColor: '#007acc',
+                    borderWidth: 1,
+                    textStyle: {
+                        color: '#333',
+                        fontSize: 14
+                    },
+                    formatter: function(params) {
+                        return `${params.name}<br/>掌握程度: ${params.value}%`;
+                    }
+                },
                 radar: {
                     indicator: [
                         { name: '数学', max: 100 },
@@ -794,41 +979,79 @@
                         { name: '物理', max: 100 },
                         { name: '化学', max: 100 },
                         { name: '生物', max: 100 },
-                        { name: '历史', max: 100 },
-                        { name: '地理', max: 100 }
+                        { name: '历史', max: 100 }
                     ],
-                    splitArea: {
-                        areaStyle: {
-                            color: ['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.02)']
-                        }
-                    },
-                    axisLine: {
-                        lineStyle: {
-                            color: 'rgba(255, 255, 255, 0.2)'
+                    shape: 'polygon',
+                    splitNumber: 5,
+                    name: {
+                        textStyle: {
+                            color: '#007acc',
+                            fontSize: 12,
+                            fontWeight: 'bold'
                         }
                     },
                     splitLine: {
                         lineStyle: {
-                            color: 'rgba(255, 255, 255, 0.1)'
+                            color: '#e0e0e0',
+                            width: 1
                         }
-                    }
+                    },
+                    splitArea: {
+                        show: true,
+                        areaStyle: {
+                            color: ['rgba(0, 122, 204, 0.1)', 'rgba(0, 122, 204, 0.05)']
+                        }
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: '#007acc',
+                            width: 1
+                        }
+                    },
+                    axisLabel: {
+                        show: false
+                    },
+                    radius: '70%'
                 },
                 series: [{
+                    name: '掌握程度',
                     type: 'radar',
                     data: [{
-                        value: [85, 78, 92, 65, 70, 80, 75, 68],
-                        name: '知识点掌握程度',
-                        areaStyle: {
-                            color: 'rgba(79, 70, 229, 0.3)'
-                        },
+                        value: [85, 78, 92, 65, 70, 80, 75],
+                        name: '知识点掌握'
+                    }],
+                    symbol: 'circle',
+                    symbolSize: 6,
+                    lineStyle: {
+                        width: 2,
+                        color: '#007acc'
+                    },
+                    areaStyle: {
+                        color: 'rgba(0, 122, 204, 0.3)'
+                    },
+                    itemStyle: {
+                        color: '#007acc',
+                        borderColor: '#fff',
+                        borderWidth: 2,
+                        shadowBlur: 10,
+                        shadowColor: 'rgba(0, 122, 204, 0.5)'
+                    },
+                    emphasis: {
                         lineStyle: {
-                            color: 'rgba(79, 70, 229, 0.8)',
-                            width: 2
+                            width: 3,
+                            color: '#005a9e'
+                        },
+                        areaStyle: {
+                            color: 'rgba(0, 90, 158, 0.4)'
                         },
                         itemStyle: {
-                            color: 'rgba(79, 70, 229, 1)'
+                            color: '#005a9e',
+                            borderColor: '#fff',
+                            borderWidth: 3,
+                            shadowBlur: 15,
+                            shadowColor: 'rgba(0, 90, 158, 0.7)'
                         }
-                    }]
+                    }
                 }]
             };
             
@@ -843,6 +1066,16 @@
         function initLearningTrendChart() {
             const chartDom = document.getElementById('learningTrendChart');
             const myChart = echarts.init(chartDom);
+            
+            // 启用动画
+            myChart.setOption({
+                animation: true,
+                animationDuration: 2000,
+                animationEasing: 'cubicOut',
+                animationDelay: function(idx) {
+                    return idx * 100;
+                }
+            });
             
             // 获取最近7天的日期
             const dates = [];
@@ -874,63 +1107,105 @@
             
             const option = {
                 tooltip: {
-                    trigger: 'axis'
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                        label: {
+                            backgroundColor: '#6a7985'
+                        }
+                    },
+                    formatter: function(params) {
+                        return params[0].name + '<br/>学习时长: ' + params[0].value + ' 小时';
+                    },
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    borderColor: '#007acc',
+                    borderWidth: 1,
+                    textStyle: {
+                        color: '#333'
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
                 },
                 xAxis: {
                     type: 'category',
+                    boundaryGap: false,
                     data: dates,
                     axisLine: {
                         lineStyle: {
-                            color: 'rgba(255, 255, 255, 0.3)'
+                            color: '#007acc'
                         }
                     },
                     axisLabel: {
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        rotate: 45
+                        color: '#666',
+                        rotate: 0
                     },
                     splitLine: {
-                        lineStyle: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        }
+                        show: false
                     }
                 },
                 yAxis: {
                     type: 'value',
                     name: '学习时长（小时）',
                     nameTextStyle: {
-                        color: 'rgba(255, 255, 255, 0.7)'
+                        color: '#007acc'
                     },
                     axisLine: {
                         lineStyle: {
-                            color: 'rgba(255, 255, 255, 0.3)'
+                            color: '#007acc'
                         }
                     },
                     axisLabel: {
-                        color: 'rgba(255, 255, 255, 0.7)'
+                        color: '#666'
                     },
                     splitLine: {
                         lineStyle: {
-                            color: 'rgba(255, 255, 255, 0.1)'
+                            color: '#f0f0f0'
                         }
                     }
                 },
                 series: [{
                     name: '学习时长',
                     type: 'line',
-                    data: data,
-                    smooth: true,
+                    stack: 'Total',
                     areaStyle: {
                         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                            { offset: 0, color: 'rgba(16, 185, 129, 0.3)' },
-                            { offset: 1, color: 'rgba(16, 185, 129, 0.05)' }
+                            { offset: 0, color: 'rgba(0, 122, 204, 0.5)' },
+                            { offset: 1, color: 'rgba(0, 122, 204, 0.1)' }
                         ])
                     },
                     lineStyle: {
-                        color: 'rgba(16, 185, 129, 0.8)',
-                        width: 2
+                        width: 3,
+                        color: '#007acc'
                     },
+                    symbol: 'circle',
+                    symbolSize: 8,
                     itemStyle: {
-                        color: 'rgba(16, 185, 129, 1)'
+                        color: '#007acc',
+                        borderColor: '#fff',
+                        borderWidth: 2,
+                        shadowBlur: 10,
+                        shadowColor: 'rgba(0, 122, 204, 0.5)',
+                        shadowOffsetX: 0,
+                        shadowOffsetY: 2
+                    },
+                    emphasis: {
+                        focus: 'series',
+                        itemStyle: {
+                            symbolSize: 12,
+                            shadowBlur: 15,
+                            shadowColor: 'rgba(0, 122, 204, 0.7)'
+                        }
+                    },
+                    data: data,
+                    smooth: true,
+                    animationDuration: 2000,
+                    animationEasing: 'cubicOut',
+                    animationDelay: function(idx) {
+                        return idx * 100;
                     }
                 }]
             };
@@ -939,7 +1214,7 @@
             
             window.addEventListener('resize', function() {
                 myChart.resize();
-            }
+            });
         }
         
         // 全局设置管理
@@ -1144,37 +1419,6 @@
                 }, 300);
             }, 3000);
         }
-        
-        // 事件监听器
-        document.addEventListener('DOMContentLoaded', function() {
-            loadStudyData();
-            
-            document.getElementById('startTimer').addEventListener('click', startTimer);
-            document.getElementById('stopTimer').addEventListener('click', stopTimer);
-            document.getElementById('resetTimer').addEventListener('click', resetStudyData);
-            document.getElementById('viewHistory').addEventListener('click', viewHistory);
-            document.getElementById('exportHistory').addEventListener('click', exportHistory);
-            
-            // 关闭弹窗事件
-            document.querySelectorAll('.close-modal').forEach(button => {
-                button.addEventListener('click', closeModal);
-            });
-            
-            // 点击弹窗外部关闭
-            window.addEventListener('click', function(event) {
-                const modal = document.getElementById('encouragementModal');
-                if (event.target === modal) {
-                    closeModal();
-                }
-            });
-            
-            // 初始化图表
-            initKnowledgeChart();
-            initLearningTrendChart();
-            
-            // 初始化全局设置
-            initGlobalSettings();
-        });
     </script>
 </body>
 </html>

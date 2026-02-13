@@ -6,8 +6,120 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>自定义名称</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        /* 顶部横向导航栏样式 */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #4F46E5 100%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+        }
+
+        .nav-items {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            overflow-x: auto;
+            max-width: calc(100% - 200px);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+        }
+
+        .nav-items::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .nav-items::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .nav-items::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 2px;
+        }
+
+        .nav-item {
+            padding: 0.6rem 1.2rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.3);
+            font-weight: 600;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-button {
+            padding: 0.6rem 1.2rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-button.logout {
+            background: rgba(239, 68, 68, 0.8);
+        }
+
+        .nav-button.logout:hover {
+            background: rgba(239, 68, 68, 1);
+        }
+
+        .dashboard-container {
+            margin-top: 60px;
+        }
+    </style>
 </head>
 <body>
+    <!-- 顶部横向导航栏 -->
+    <nav class="top-nav">
+        <div class="nav-items">
+            <a href="/" class="nav-item">🏠 首页</a>
+            <a href="/dashboard/" class="nav-item">📊 仪表盘</a>
+            <a href="/prediction/" class="nav-item">🔮 学习预测</a>
+            <a href="/recommendation/" class="nav-item">🎯 智能推荐</a>
+            <a href="/learning_path/" class="nav-item">🛤️ 学习路径</a>
+            <a href="/model_comparison/" class="nav-item">⚖️ 模型对比</a>
+            <a href="/heatmap/" class="nav-item">🌡️ 知识热力图</a>
+            <a href="/analysis/" class="nav-item">📈 数据分析</a>
+        </div>
+        <div class="nav-actions">
+            <a href="/logout/" class="nav-button logout">🚪 退出登录</a>
+        </div>
+    </nav>
+
     <div class="background-texture"></div>
     
     <div class="dashboard-container">

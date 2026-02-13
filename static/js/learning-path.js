@@ -9,24 +9,36 @@ document.addEventListener('DOMContentLoaded', function() {
     const pathCard = document.getElementById('pathCard');
     const pathContainer = document.getElementById('pathContainer');
     
-    pathLength.addEventListener('input', function() {
-        pathLengthValue.textContent = this.value;
-    });
+    // 检查元素是否存在
+    if (pathLength && pathLengthValue) {
+        pathLength.addEventListener('input', function() {
+            pathLengthValue.textContent = this.value;
+        });
+    }
     
     loadDatasets();
     
-    datasetSelect.addEventListener('change', function() {
-        if (this.value) {
-            loadUsers(this.value);
-        } else {
-            userSelect.innerHTML = '<option value="">请先选择数据集</option>';
-            userSelect.disabled = true;
-        }
-    });
+    // 检查元素是否存在
+    if (datasetSelect && userSelect) {
+        datasetSelect.addEventListener('change', function() {
+            if (this.value) {
+                loadUsers(this.value);
+            } else {
+                userSelect.innerHTML = '<option value="">请先选择数据集</option>';
+                userSelect.disabled = true;
+            }
+        });
+    }
     
-    generatePathBtn.addEventListener('click', generatePath);
+    // 检查元素是否存在
+    if (generatePathBtn) {
+        generatePathBtn.addEventListener('click', generatePath);
+    }
     
     async function loadDatasets() {
+        // 检查元素是否存在
+        if (!datasetSelect) return;
+        
         try {
             const response = await fetch('/api/datasets/');
             const data = await response.json();
@@ -44,6 +56,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     async function loadUsers(dataset) {
+        // 检查元素是否存在
+        if (!userSelect) return;
+        
         try {
             const response = await fetch(`/api/dataset/${dataset}/`);
             const data = await response.json();
@@ -62,6 +77,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     async function generatePath() {
+        // 检查元素是否存在
+        if (!datasetSelect || !userSelect || !goalSelect || !pathLength || !generatePathBtn || !pathContainer || !pathCard) return;
+        
         const dataset = datasetSelect.value;
         const userId = userSelect.value;
         const goal = goalSelect.value;

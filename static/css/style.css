@@ -619,9 +619,13 @@ body {
     transition: all 0.3s ease;
 }
 
-.styled-select option,
+.styled-select option {
+    color: #000000;
+    background: #ffffff;
+}
+
 .styled-input::placeholder {
-    color: rgba(0, 0, 0, 0.6);
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .styled-select:focus,

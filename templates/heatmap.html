@@ -1,0 +1,565 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识热力图</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/echarts.min.js' %}?v=1.1"></script>
+    <style>
+        /* 顶部横向导航栏样式 */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(135deg, #a0e7ff 0%, #007acc 100%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+        }
+
+        .nav-items {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            overflow-x: auto;
+            max-width: calc(100% - 200px);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+        }
+
+        .nav-items::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .nav-items::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .nav-items::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 2px;
+        }
+
+        .nav-item {
+            padding: 0.6rem 1.2rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.3);
+            font-weight: 600;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-button {
+            padding: 0.6rem 1.2rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-button.logout {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-button.logout:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .dashboard-container {
+            margin-top: 60px;
+        }
+
+        .heatmap-container {
+            padding: 2rem;
+            min-height: calc(100vh - 60px);
+        }
+
+        .heatmap-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .heatmap-header h1 {
+            font-size: 2.5rem;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .heatmap-header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+        }
+
+        .heatmap-controls {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 2rem;
+        }
+
+        .control-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+
+        .control-group select,
+        .control-group input {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            font-size: 1rem;
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .control-group select:focus,
+        .control-group input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .generate-button {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .generate-button:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .generate-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .heatmap-display {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .heatmap-chart {
+            width: 100%;
+            height: 600px;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .loading-spinner.active {
+            display: block;
+        }
+
+        .loading-spinner p {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            color: rgba(255, 255, 255, 0.9);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .error-message.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部横向导航栏 -->
+    <nav class="top-nav">
+        <div class="nav-items">
+            <a href="/" class="nav-item">🏠 首页</a>
+            <a href="/dashboard/" class="nav-item">📊 仪表盘</a>
+            <a href="/prediction/" class="nav-item">🔮 学习预测</a>
+            <a href="/recommendation/" class="nav-item">🎯 智能推荐</a>
+            <a href="/learning_path/" class="nav-item">🛤️ 学习路径</a>
+            <a href="/model_comparison/" class="nav-item">⚖️ 模型对比</a>
+            <a href="/heatmap/" class="nav-item active">🌡️ 知识热力图</a>
+            <a href="/analysis/" class="nav-item">📈 数据分析</a>
+            <a href="/assessment/" class="nav-item">📝 教育评估</a>
+        </div>
+        <div class="nav-actions">
+            <a href="/logout/" class="nav-button logout">🚪 退出登录</a>
+        </div>
+    </nav>
+
+    <div class="background-texture"></div>
+    
+    <div class="dashboard-container">
+        <div class="heatmap-container">
+            <div class="heatmap-header">
+                <h1>知识热力图</h1>
+                <p>可视化展示知识点掌握情况</p>
+            </div>
+
+            <div class="heatmap-controls">
+                <div class="error-message" id="errorMessage"></div>
+                
+                <div class="control-row">
+                    <div class="control-group">
+                        <label>选择数据集</label>
+                        <select id="datasetSelect" class="styled-select">
+                            <option value="">请先选择数据集</option>
+                            {% for dataset in datasets %}
+                            <option value="{{ dataset }}">{{ dataset }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>选择学生</label>
+                        <select id="userSelect" class="styled-select" disabled>
+                            <option value="">请先选择数据集</option>
+                        </select>
+                        <div style="margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem; color: rgba(255, 255, 255, 0.7);">或手动输入学生ID</label>
+                            <input type="number" id="manualUserId" class="styled-input" placeholder="输入学生ID" min="1" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="generateHeatmap" class="generate-button">生成热力图</button>
+            </div>
+
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p>正在生成热力图...</p>
+            </div>
+
+            <div class="heatmap-display" id="heatmapDisplay" style="display: none;">
+                <div id="heatmapChart" class="heatmap-chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDataset = null;
+        let currentUserId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const datasetSelect = document.getElementById('datasetSelect');
+            const userSelect = document.getElementById('userSelect');
+            const manualUserId = document.getElementById('manualUserId');
+            const generateButton = document.getElementById('generateHeatmap');
+            const errorMessage = document.getElementById('errorMessage');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const heatmapDisplay = document.getElementById('heatmapDisplay');
+
+            // 确保元素存在
+            if (!datasetSelect || !userSelect || !manualUserId || !generateButton) {
+                console.error('页面元素未找到');
+                return;
+            }
+
+            console.log('页面加载完成，元素已找到');
+
+            datasetSelect.addEventListener('change', function() {
+                const dataset = this.value;
+                console.log('数据集选择变化:', dataset);
+                
+                if (dataset) {
+                    console.log('启用学生选择控件');
+                    userSelect.disabled = false;
+                    manualUserId.disabled = false;
+                    // 直接移除disabled属性，确保彻底启用
+                    userSelect.removeAttribute('disabled');
+                    manualUserId.removeAttribute('disabled');
+                    loadUsers(dataset);
+                } else {
+                    console.log('禁用学生选择控件');
+                    userSelect.disabled = true;
+                    manualUserId.disabled = true;
+                    userSelect.innerHTML = '<option value="">请先选择数据集</option>';
+                }
+            });
+
+            generateButton.addEventListener('click', function() {
+                const dataset = datasetSelect.value;
+                let userId = userSelect.value;
+                const manualId = manualUserId.value;
+
+                if (manualId) {
+                    userId = manualId;
+                }
+
+                if (!dataset || !userId) {
+                    errorMessage.textContent = '请先选择数据集和学生';
+                    errorMessage.classList.add('active');
+                    return;
+                }
+
+                errorMessage.classList.remove('active');
+                loadingSpinner.classList.add('active');
+                heatmapDisplay.style.display = 'none';
+
+                fetch(`/api/heatmap/${dataset}/${userId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        loadingSpinner.classList.remove('active');
+                        
+                        if (data.error) {
+                            errorMessage.textContent = data.error;
+                            errorMessage.classList.add('active');
+                            return;
+                        }
+
+                        heatmapDisplay.style.display = 'block';
+                        renderHeatmap(data);
+                    })
+                    .catch(error => {
+                        loadingSpinner.classList.remove('active');
+                        errorMessage.textContent = '生成热力图失败: ' + error.message;
+                        errorMessage.classList.add('active');
+                    });
+            });
+        });
+
+        function loadUsers(dataset) {
+            fetch(`/api/ids/${dataset}/student`)
+                .then(response => response.json())
+                .then(data => {
+                    const userSelect = document.getElementById('userSelect');
+                    userSelect.innerHTML = '<option value="">请选择学生</option>';
+                    
+                    if (data.ids) {
+                        data.ids.forEach(id => {
+                            const option = document.createElement('option');
+                            option.value = id;
+                            option.textContent = `学生 ${id}`;
+                            userSelect.appendChild(option);
+                        });
+                    } else {
+                        // 添加默认学生选项
+                        for (let i = 1; i <= 10; i++) {
+                            const option = document.createElement('option');
+                            option.value = i;
+                            option.textContent = `学生 ${i}`;
+                            userSelect.appendChild(option);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('加载学生列表失败:', error);
+                    // API调用失败时，添加默认学生选项
+                    const userSelect = document.getElementById('userSelect');
+                    userSelect.innerHTML = '<option value="">请选择学生</option>';
+                    for (let i = 1; i <= 10; i++) {
+                        const option = document.createElement('option');
+                        option.value = i;
+                        option.textContent = `学生 ${i}`;
+                        userSelect.appendChild(option);
+                    }
+                });
+        }
+
+        function renderHeatmap(data) {
+            const chartDom = document.getElementById('heatmapChart');
+            const myChart = echarts.init(chartDom);
+
+            const option = {
+                title: {
+                    text: '知识点掌握热力图',
+                    left: 'center',
+                    textStyle: {
+                        color: 'white',
+                        fontSize: 18
+                    }
+                },
+                tooltip: {
+                    position: 'top',
+                    formatter: function(params) {
+                        return `${params.name}<br/>掌握度: ${params.value.toFixed(2)}`;
+                    }
+                },
+                visualMap: {
+                    min: 0,
+                    max: 1,
+                    calculable: true,
+                    orient: 'horizontal',
+                    left: 'center',
+                    bottom: 10,
+                    inRange: {
+                        color: ['#50a3ba', '#eac736', '#f46d43']
+                    },
+                    textStyle: {
+                        color: 'white'
+                    }
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data.data.map(item => '知识点 ' + item.skill_id),
+                    name: '知识点',
+                    nameTextStyle: {
+                        color: 'white'
+                    },
+                    axisLabel: {
+                        color: 'white',
+                        rotate: 45
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: 'rgba(255, 255, 255, 0.5)'
+                        }
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '掌握度',
+                    min: 0,
+                    max: 1,
+                    nameTextStyle: {
+                        color: 'white'
+                    },
+                    axisLabel: {
+                        color: 'white',
+                        formatter: '{value}'
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: 'rgba(255, 255, 255, 0.5)'
+                        }
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                },
+                series: [{
+                    type: 'bar',
+                    data: data.data.map(function(item) {
+                        return {
+                            name: '知识点 ' + item.skill_id,
+                            value: item.mastery
+                        };
+                    }),
+                    label: {
+                        show: true,
+                        position: 'top',
+                        color: 'white',
+                        formatter: function(params) {
+                            return params.value.toFixed(2);
+                        }
+                    },
+                    itemStyle: {
+                        opacity: 0.9,
+                        color: function(params) {
+                            const value = params.value;
+                            if (value >= 0.8) return '#50a3ba';
+                            if (value >= 0.6) return '#eac736';
+                            if (value >= 0.4) return '#f46d43';
+                            return '#f5e623';
+                        }
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }]
+            };
+
+            myChart.setOption(option);
+
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            });
+        }
+    </script>
+</body>
+</html>

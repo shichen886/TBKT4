@@ -7,10 +7,354 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/echarts.min.js"></script>
     <style>
-        .comparison-container {
-            padding: 2rem;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
+        /* 顶部横向导航栏样式 */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(135deg, #a0e7ff 0%, #007acc 100%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+        }
+
+        .nav-items {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            overflow-x: auto;
+            max-width: calc(100% - 200px);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+        }
+
+        .nav-items::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .nav-items::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .nav-items::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 2px;
+        }
+
+        .nav-item {
+            padding: 0.6rem 1.2rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.3);
+            font-weight: 600;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-button {
+            padding: 0.6rem 1.2rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-button.logout {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-button.logout:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 仪表盘容器样式 */
+        .dashboard-container {
+            margin-top: 60px;
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            min-height: calc(100vh - 60px);
+            gap: 0;
+        }
+
+        /* 侧边栏样式 */
+        .settings-sidebar {
+            width: 240px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1.5rem;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .settings-sidebar.collapsed {
+            width: 60px;
+            padding: 1rem 0.5rem;
+        }
+
+        /* 收起按钮 */
+        .sidebar-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 0.5rem;
+            width: 24px;
+            height: 24px;
+            background: rgba(102, 126, 234, 0.8);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .sidebar-toggle:hover {
+            background: rgba(102, 126, 234, 1);
+            transform: scale(1.1);
+        }
+
+        .settings-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .settings-header h3 {
+            color: #667eea;
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .settings-section {
+            margin-bottom: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .settings-section h4 {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0 0 0.6rem 0;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        /* 开关样式 */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 45px;
+            height: 20px;
+            margin-right: 0.6rem;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #667eea;
+        }
+
+        input:focus + .toggle-slider {
+            box-shadow: 0 0 1px #667eea;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(25px);
+        }
+
+        .toggle-label {
+            margin-left: 0;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+        }
+
+        .settings-select {
+            width: 100%;
+            padding: 0.6rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .settings-select:hover {
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .settings-select option {
+            background: #1a1a2e;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .settings-input {
+            width: 100%;
+            padding: 0.6rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .settings-input:hover {
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        .settings-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .settings-footer {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .settings-footer button {
+            width: 100%;
+            margin-bottom: 0.6rem;
+            font-size: 0.85rem;
+            padding: 0.6rem;
+        }
+
+        /* 收起状态下的样式 */
+        .settings-sidebar.collapsed .settings-header h3,
+        .settings-sidebar.collapsed .settings-section h4,
+        .settings-sidebar.collapsed .toggle-label,
+        .settings-sidebar.collapsed .settings-select,
+        .settings-sidebar.collapsed .settings-input,
+        .settings-sidebar.collapsed .settings-footer {
+            display: none;
+        }
+
+        .settings-sidebar.collapsed .settings-section {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .settings-sidebar.collapsed .toggle-switch {
+            margin-right: 0;
+        }
+
+        .settings-sidebar.collapsed .settings-section:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 按钮样式 */
+        .primary-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 0.6rem;
+        }
+
+        .primary-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .secondary-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 0.6rem;
+        }
+
+        .secondary-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* 仪表盘内容样式 */
+        .dashboard-content {
+            padding: 1.5rem;
+            overflow-y: auto;
         }
 
         .comparison-header {
@@ -20,28 +364,31 @@
 
         .comparison-header h1 {
             font-size: 2.5rem;
-            color: #667eea;
+            color: #007acc;
             margin-bottom: 0.5rem;
         }
 
         .comparison-header p {
-            color: #666;
+            color: rgba(255, 255, 255, 0.8);
             font-size: 1.1rem;
         }
 
         .model-section {
-            background: white;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border-radius: 20px;
             padding: 2rem;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             margin-bottom: 2rem;
         }
 
         .model-section h2 {
-            color: #667eea;
+            color: white;
             margin-bottom: 1.5rem;
             font-size: 1.8rem;
-            border-bottom: 3px solid #667eea;
+            border-bottom: 3px solid rgba(255, 255, 255, 0.3);
             padding-bottom: 0.5rem;
         }
 
@@ -53,24 +400,36 @@
         }
 
         .model-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 15px;
-            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
             color: white;
             transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .model-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
         }
 
         .model-card.knowledge-tracking {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .model-card.prediction {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .model-card h3 {
@@ -93,24 +452,31 @@
         }
 
         .chart-container {
-            background: white;
-            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
             padding: 2rem;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             margin-bottom: 2rem;
         }
 
         .chart-container h3 {
-            color: #667eea;
-            margin-bottom: 1.5rem;
+            color: white;
+            margin-bottom: 1rem;
             text-align: center;
-            font-size: 1.4rem;
+            font-size: 1.2rem;
+            font-weight: 600;
         }
 
         .comparison-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 1rem;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         .comparison-table th,
@@ -121,7 +487,7 @@
         }
 
         .comparison-table th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #007acc 0%, #005a9e 100%);
             color: white;
             font-weight: 600;
         }
@@ -146,387 +512,550 @@
         }
 
         .badge.kt {
-            background: rgba(102, 126, 234, 0.2);
-            color: #667eea;
+            background: rgba(0, 122, 204, 0.2);
+            color: #007acc;
         }
 
         .badge.pred {
-            background: rgba(240, 147, 251, 0.2);
-            color: #f5576c;
+            background: rgba(0, 150, 199, 0.2);
+            color: #0077b6;
         }
 
         .info-box {
-            background: #e3f2fd;
-            border-left: 4px solid #2196f3;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-left: 4px solid rgba(255, 255, 255, 0.3);
             padding: 1rem;
             margin-bottom: 1rem;
-            border-radius: 5px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .info-box h4 {
-            color: #1976d2;
+            color: white;
             margin-bottom: 0.5rem;
         }
 
         .info-box p {
-            color: #555;
+            color: rgba(255, 255, 255, 0.8);
             margin: 0;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+
+            .settings-sidebar {
+                position: fixed;
+                left: 0;
+                top: 60px;
+                height: calc(100vh - 60px);
+                z-index: 999;
+                transform: translateX(-100%);
+            }
+
+            .settings-sidebar.expanded {
+                transform: translateX(0);
+            }
+
+            .sidebar-toggle {
+                right: auto;
+                left: 10px;
+                top: 10px;
+                transform: none;
+            }
+
+            .model-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="comparison-container">
-        <div class="comparison-header">
-            <h1>📊 模型性能对比</h1>
-            <p>全面对比知识追踪模型和预测模型的性能表现</p>
+    <!-- 顶部横向导航栏 -->
+    <nav class="top-nav">
+        <div class="nav-items">
+            <a href="/" class="nav-item">🏠 首页</a>
+            <a href="/dashboard/" class="nav-item">📊 仪表盘</a>
+            <a href="/prediction/" class="nav-item">🔮 学习预测</a>
+            <a href="/recommendation/" class="nav-item">🎯 智能推荐</a>
+            <a href="/learning_path/" class="nav-item">🛤️ 学习路径</a>
+            <a href="/model_comparison/" class="nav-item active">⚖️ 模型对比</a>
+            <a href="/heatmap/" class="nav-item">🌡️ 知识热力图</a>
+            <a href="/analysis/" class="nav-item">📈 数据分析</a>
+            <a href="/assessment/" class="nav-item">📝 教育评估</a>
         </div>
+        <div class="nav-actions">
+            <a href="/logout/" class="nav-button logout">🚪 退出登录</a>
+        </div>
+    </nav>
 
-        <div class="model-section">
-            <h2>🎯 知识追踪模型</h2>
-            
-            <div class="info-box">
-                <h4>知识追踪模型说明</h4>
-                <p>知识追踪模型用于追踪学生在各个知识点上的掌握程度，预测学生答题的正确率。这些模型基于学生的历史答题记录进行训练。</p>
+    <div class="background-texture"></div>
+    
+    <div class="dashboard-container">
+        <!-- 全局设置侧边栏 -->
+        <div class="settings-sidebar" id="settingsSidebar">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <span>«</span>
+            </button>
+            <div class="settings-header">
+                <h3>⚙️ 全局设置</h3>
             </div>
-
-            <div class="model-grid">
-                <div class="model-card knowledge-tracking">
-                    <h3>DKT</h3>
-                    <div class="metric">
-                        <div class="metric-label">AUC</div>
-                        <div class="metric-value">0.7523</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">准确率</div>
-                        <div class="metric-value">72.5%</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">类型</div>
-                        <div class="metric-value">深度学习</div>
-                    </div>
-                </div>
-
-                <div class="model-card knowledge-tracking">
-                    <h3>SAKT</h3>
-                    <div class="metric">
-                        <div class="metric-label">AUC</div>
-                        <div class="metric-value">0.7769</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">准确率</div>
-                        <div class="metric-value">74.8%</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">类型</div>
-                        <div class="metric-value">自注意力</div>
-                    </div>
-                </div>
-
-                <div class="model-card knowledge-tracking">
-                    <h3>TSAKT</h3>
-                    <div class="metric">
-                        <div class="metric-label">AUC</div>
-                        <div class="metric-value">0.7843</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">准确率</div>
-                        <div class="metric-value">75.6%</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">类型</div>
-                        <div class="metric-value">张量自注意力</div>
-                    </div>
-                </div>
-
-                <div class="model-card knowledge-tracking">
-                    <h3>FFW</h3>
-                    <div class="metric">
-                        <div class="metric-label">AUC</div>
-                        <div class="metric-value">0.7234</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">准确率</div>
-                        <div class="metric-value">70.1%</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">类型</div>
-                        <div class="metric-value">前馈网络</div>
-                    </div>
-                </div>
-
-                <div class="model-card knowledge-tracking">
-                    <h3>LR</h3>
-                    <div class="metric">
-                        <div class="metric-label">AUC</div>
-                        <div class="metric-value">0.6891</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">准确率</div>
-                        <div class="metric-value">67.3%</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">类型</div>
-                        <div class="metric-value">逻辑回归</div>
-                    </div>
-                </div>
+            <div class="settings-section">
+                <h4>主题设置</h4>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="themeToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">深色模式</span>
+            </div>
+            <div class="settings-section">
+                <h4>语言设置</h4>
+                <select id="languageSelect" class="settings-select">
+                    <option value="zh-CN">简体中文</option>
+                    <option value="en-US">English</option>
+                </select>
+            </div>
+            <div class="settings-section">
+                <h4>模型选择</h4>
+                <select id="modelSelect" class="settings-select">
+                    <option value="tsakt">TSAKT</option>
+                    <option value="sakt">SAKT</option>
+                    <option value="iekt">IEKT</option>
+                    <option value="akt">AKT</option>
+                    <option value="dkvmn">DKVMN</option>
+                </select>
+            </div>
+            <div class="settings-section">
+                <h4>自适应学习</h4>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="adaptiveToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">启用自适应</span>
+            </div>
+            <div class="settings-section">
+                <h4>学习目标</h4>
+                <input type="number" id="studyGoalInput" class="settings-input" placeholder="每日学习时长(分钟)" min="1">
+            </div>
+            <div class="settings-footer">
+                <button id="saveSettings" class="primary-button">保存设置</button>
+                <button id="resetSettings" class="secondary-button">重置默认</button>
             </div>
         </div>
-
-        <div class="model-section">
-            <h2>🔮 预测模型</h2>
-            
-            <div class="info-box">
-                <h4>预测模型说明</h4>
-                <p>预测模型用于预测学生未来的学习表现，包括答题正确率、学习趋势等。这些模型结合了多种算法进行预测。</p>
+        
+        <div class="dashboard-content">
+            <div class="comparison-header">
+                <h1>📊 模型性能对比</h1>
+                <p>全面对比知识追踪模型和预测模型的性能表现</p>
             </div>
 
-            <div class="model-grid">
-                <div class="model-card prediction">
-                    <h3>张量自注意力</h3>
-                    <div class="metric">
-                        <div class="metric-label">准确率</div>
-                        <div class="metric-value">78.5%</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">特点</div>
-                        <div class="metric-value">多头注意力</div>
-                    </div>
+            <div class="model-section">
+                <h2>🎯 知识追踪模型</h2>
+                
+                <div class="info-box">
+                    <h4>知识追踪模型说明</h4>
+                    <p>知识追踪模型用于追踪学生在各个知识点上的掌握程度，预测学生答题的正确率。这些模型基于学生的历史答题记录进行训练。</p>
                 </div>
 
-                <div class="model-card prediction">
-                    <h3>RNN</h3>
-                    <div class="metric">
-                        <div class="metric-label">准确率</div>
-                        <div class="metric-value">75.2%</div>
+                <div class="model-grid">
+                    <div class="model-card knowledge-tracking">
+                        <h3>DKT</h3>
+                        <div class="metric">
+                            <div class="metric-label">AUC</div>
+                            <div class="metric-value">0.7523</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">准确率</div>
+                            <div class="metric-value">72.5%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">类型</div>
+                            <div class="metric-value">深度学习</div>
+                        </div>
                     </div>
-                    <div class="metric">
-                        <div class="metric-label">特点</div>
-                        <div class="metric-value">序列建模</div>
-                    </div>
-                </div>
 
-                <div class="model-card prediction">
-                    <h3>LSTM</h3>
-                    <div class="metric">
-                        <div class="metric-label">准确率</div>
-                        <div class="metric-value">76.8%</div>
+                    <div class="model-card knowledge-tracking">
+                        <h3>SAKT</h3>
+                        <div class="metric">
+                            <div class="metric-label">AUC</div>
+                            <div class="metric-value">0.7769</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">准确率</div>
+                            <div class="metric-value">74.8%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">类型</div>
+                            <div class="metric-value">自注意力</div>
+                        </div>
                     </div>
-                    <div class="metric">
-                        <div class="metric-label">特点</div>
-                        <div class="metric-value">长期依赖</div>
-                    </div>
-                </div>
 
-                <div class="model-card prediction">
-                    <h3>GRU</h3>
-                    <div class="metric">
-                        <div class="metric-label">准确率</div>
-                        <div class="metric-value">76.1%</div>
+                    <div class="model-card knowledge-tracking">
+                        <h3>TSAKT</h3>
+                        <div class="metric">
+                            <div class="metric-label">AUC</div>
+                            <div class="metric-value">0.7843</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">准确率</div>
+                            <div class="metric-value">75.6%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">类型</div>
+                            <div class="metric-value">张量自注意力</div>
+                        </div>
                     </div>
-                    <div class="metric">
-                        <div class="metric-label">特点</div>
-                        <div class="metric-value">高效训练</div>
-                    </div>
-                </div>
 
-                <div class="model-card prediction">
-                    <h3>Apriori</h3>
-                    <div class="metric">
-                        <div class="metric-label">准确率</div>
-                        <div class="metric-value">72.3%</div>
+                    <div class="model-card knowledge-tracking">
+                        <h3>FFW</h3>
+                        <div class="metric">
+                            <div class="metric-label">AUC</div>
+                            <div class="metric-value">0.7234</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">准确率</div>
+                            <div class="metric-value">70.1%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">类型</div>
+                            <div class="metric-value">前馈网络</div>
+                        </div>
                     </div>
-                    <div class="metric">
-                        <div class="metric-label">特点</div>
-                        <div class="metric-value">关联规则</div>
-                    </div>
-                </div>
 
-                <div class="model-card prediction">
-                    <h3>平均算法</h3>
-                    <div class="metric">
-                        <div class="metric-label">准确率</div>
-                        <div class="metric-value">79.2%</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">特点</div>
-                        <div class="metric-value">加权平均</div>
+                    <div class="model-card knowledge-tracking">
+                        <h3>LR</h3>
+                        <div class="metric">
+                            <div class="metric-label">AUC</div>
+                            <div class="metric-value">0.6891</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">准确率</div>
+                            <div class="metric-value">67.3%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">类型</div>
+                            <div class="metric-value">逻辑回归</div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="chart-container">
-            <h3>📈 模型性能对比图</h3>
-            <canvas id="comparisonChart"></canvas>
-        </div>
+            <div class="model-section">
+                <h2>🔮 预测模型</h2>
+                
+                <div class="info-box">
+                    <h4>预测模型说明</h4>
+                    <p>预测模型用于预测学生未来的学习表现，包括答题正确率、学习趋势等。这些模型结合了多种算法进行预测。</p>
+                </div>
 
-        <div class="chart-container">
-            <h3>📊 模型详细对比表</h3>
-            <table class="comparison-table">
-                <thead>
-                    <tr>
-                        <th>模型名称</th>
-                        <th>类型</th>
-                        <th>AUC</th>
-                        <th>准确率</th>
-                        <th>训练时间</th>
-                        <th>预测速度</th>
-                        <th>推荐场景</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><span class="badge kt">KT</span> DKT</td>
-                        <td>深度学习</td>
-                        <td>0.7523</td>
-                        <td>72.5%</td>
-                        <td>中等</td>
-                        <td>快</td>
-                        <td>通用知识追踪</td>
-                    </tr>
-                    <tr>
-                        <td><span class="badge kt">KT</span> SAKT</td>
-                        <td>自注意力</td>
-                        <td>0.7769</td>
-                        <td>74.8%</td>
-                        <td>较慢</td>
-                        <td>中等</td>
-                        <td>复杂知识点</td>
-                    </tr>
-                    <tr class="best">
-                        <td><span class="badge kt">KT</span> TSAKT</td>
-                        <td>张量自注意力</td>
-                        <td>0.7843</td>
-                        <td>75.6%</td>
-                        <td>慢</td>
-                        <td>中等</td>
-                        <td>高精度需求</td>
-                    </tr>
-                    <tr>
-                        <td><span class="badge kt">KT</span> FFW</td>
-                        <td>前馈网络</td>
-                        <td>0.7234</td>
-                        <td>70.1%</td>
-                        <td>快</td>
-                        <td>快</td>
-                        <td>快速预测</td>
-                    </tr>
-                    <tr>
-                        <td><span class="badge kt">KT</span> LR</td>
-                        <td>逻辑回归</td>
-                        <td>0.6891</td>
-                        <td>67.3%</td>
-                        <td>很快</td>
-                        <td>很快</td>
-                        <td>简单场景</td>
-                    </tr>
-                    <tr>
-                        <td><span class="badge pred">Pred</span> 张量自注意力</td>
-                        <td>多头注意力</td>
-                        <td>-</td>
-                        <td>78.5%</td>
-                        <td>慢</td>
-                        <td>中等</td>
-                        <td>复杂预测</td>
-                    </tr>
-                    <tr>
-                        <td><span class="badge pred">Pred</span> RNN</td>
-                        <td>序列建模</td>
-                        <td>-</td>
-                        <td>75.2%</td>
-                        <td>中等</td>
-                        <td>快</td>
-                        <td>序列预测</td>
-                    </tr>
-                    <tr>
-                        <td><span class="badge pred">Pred</span> LSTM</td>
-                        <td>长期依赖</td>
-                        <td>-</td>
-                        <td>76.8%</td>
-                        <td>较慢</td>
-                        <td>中等</td>
-                        <td>长期趋势</td>
-                    </tr>
-                    <tr>
-                        <td><span class="badge pred">Pred</span> GRU</td>
-                        <td>高效训练</td>
-                        <td>-</td>
-                        <td>76.1%</td>
-                        <td>中等</td>
-                        <td>快</td>
-                        <td>平衡场景</td>
-                    </tr>
-                    <tr>
-                        <td><span class="badge pred">Pred</span> Apriori</td>
-                        <td>关联规则</td>
-                        <td>-</td>
-                        <td>72.3%</td>
-                        <td>快</td>
-                        <td>很快</td>
-                        <td>规则挖掘</td>
-                    </tr>
-                    <tr class="best">
-                        <td><span class="badge pred">Pred</span> 平均算法</td>
-                        <td>加权平均</td>
-                        <td>-</td>
-                        <td>79.2%</td>
-                        <td>中等</td>
-                        <td>中等</td>
-                        <td>综合预测</td>
-                    </tr>
-                </tbody>
-            </table>
+                <div class="model-grid">
+                    <div class="model-card prediction">
+                        <h3>张量自注意力</h3>
+                        <div class="metric">
+                            <div class="metric-label">准确率</div>
+                            <div class="metric-value">78.5%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">特点</div>
+                            <div class="metric-value">多头注意力</div>
+                        </div>
+                    </div>
+
+                    <div class="model-card prediction">
+                        <h3>RNN</h3>
+                        <div class="metric">
+                            <div class="metric-label">准确率</div>
+                            <div class="metric-value">75.2%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">特点</div>
+                            <div class="metric-value">序列建模</div>
+                        </div>
+                    </div>
+
+                    <div class="model-card prediction">
+                        <h3>LSTM</h3>
+                        <div class="metric">
+                            <div class="metric-label">准确率</div>
+                            <div class="metric-value">76.8%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">特点</div>
+                            <div class="metric-value">长期依赖</div>
+                        </div>
+                    </div>
+
+                    <div class="model-card prediction">
+                        <h3>GRU</h3>
+                        <div class="metric">
+                            <div class="metric-label">准确率</div>
+                            <div class="metric-value">76.1%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">特点</div>
+                            <div class="metric-value">高效训练</div>
+                        </div>
+                    </div>
+
+                    <div class="model-card prediction">
+                        <h3>Apriori</h3>
+                        <div class="metric">
+                            <div class="metric-label">准确率</div>
+                            <div class="metric-value">72.3%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">特点</div>
+                            <div class="metric-value">关联规则</div>
+                        </div>
+                    </div>
+
+                    <div class="model-card prediction">
+                        <h3>平均算法</h3>
+                        <div class="metric">
+                            <div class="metric-label">准确率</div>
+                            <div class="metric-value">79.2%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">特点</div>
+                            <div class="metric-value">加权平均</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>📈 模型性能对比图</h3>
+                <canvas id="comparisonChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h3>📊 模型详细对比表</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>模型名称</th>
+                            <th>类型</th>
+                            <th>AUC</th>
+                            <th>准确率</th>
+                            <th>训练时间</th>
+                            <th>预测速度</th>
+                            <th>推荐场景</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge kt">KT</span> DKT</td>
+                            <td>深度学习</td>
+                            <td>0.7523</td>
+                            <td>72.5%</td>
+                            <td>中等</td>
+                            <td>快</td>
+                            <td>通用知识追踪</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge kt">KT</span> SAKT</td>
+                            <td>自注意力</td>
+                            <td>0.7769</td>
+                            <td>74.8%</td>
+                            <td>较慢</td>
+                            <td>中等</td>
+                            <td>复杂知识点</td>
+                        </tr>
+                        <tr class="best">
+                            <td><span class="badge kt">KT</span> TSAKT</td>
+                            <td>张量自注意力</td>
+                            <td>0.7843</td>
+                            <td>75.6%</td>
+                            <td>慢</td>
+                            <td>中等</td>
+                            <td>高精度需求</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge kt">KT</span> FFW</td>
+                            <td>前馈网络</td>
+                            <td>0.7234</td>
+                            <td>70.1%</td>
+                            <td>快</td>
+                            <td>快</td>
+                            <td>快速预测</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge kt">KT</span> LR</td>
+                            <td>逻辑回归</td>
+                            <td>0.6891</td>
+                            <td>67.3%</td>
+                            <td>很快</td>
+                            <td>很快</td>
+                            <td>简单场景</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge pred">Pred</span> 张量自注意力</td>
+                            <td>多头注意力</td>
+                            <td>-</td>
+                            <td>78.5%</td>
+                            <td>慢</td>
+                            <td>中等</td>
+                            <td>复杂预测</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge pred">Pred</span> RNN</td>
+                            <td>序列建模</td>
+                            <td>-</td>
+                            <td>75.2%</td>
+                            <td>中等</td>
+                            <td>快</td>
+                            <td>序列预测</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge pred">Pred</span> LSTM</td>
+                            <td>长期依赖</td>
+                            <td>-</td>
+                            <td>76.8%</td>
+                            <td>较慢</td>
+                            <td>中等</td>
+                            <td>长期趋势</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge pred">Pred</span> GRU</td>
+                            <td>高效训练</td>
+                            <td>-</td>
+                            <td>76.1%</td>
+                            <td>中等</td>
+                            <td>快</td>
+                            <td>平衡场景</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge pred">Pred</span> Apriori</td>
+                            <td>关联规则</td>
+                            <td>-</td>
+                            <td>72.3%</td>
+                            <td>快</td>
+                            <td>很快</td>
+                            <td>规则挖掘</td>
+                        </tr>
+                        <tr class="best">
+                            <td><span class="badge pred">Pred</span> 平均算法</td>
+                            <td>加权平均</td>
+                            <td>-</td>
+                            <td>79.2%</td>
+                            <td>中等</td>
+                            <td>中等</td>
+                            <td>综合预测</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
-        const ctx = document.getElementById('comparisonChart').getContext('2d');
+        // 侧边栏切换功能
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const settingsSidebar = document.getElementById('settingsSidebar');
 
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['DKT', 'SAKT', 'TSAKT', 'FFW', 'LR', '张量自注意力', 'RNN', 'LSTM', 'GRU', 'Apriori', '平均算法'],
-                datasets: [
-                    {
-                        label: '知识追踪模型 (AUC)',
-                        data: [0.7523, 0.7769, 0.7843, 0.7234, 0.6891, null, null, null, null, null, null],
-                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                        borderColor: 'rgba(102, 126, 234, 1)',
-                        borderWidth: 2
-                    },
-                    {
-                        label: '预测模型 (准确率)',
-                        data: [null, null, null, null, null, 0.785, 0.752, 0.768, 0.761, 0.723, 0.792],
-                        backgroundColor: 'rgba(240, 147, 251, 0.8)',
-                        borderColor: 'rgba(240, 147, 251, 1)',
-                        borderWidth: 2
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 20,
-                            usePointStyle: true
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 1,
-                        title: {
-                            display: true,
-                            text: '性能指标'
-                        }
-                    }
-                }
+        sidebarToggle.addEventListener('click', function() {
+            settingsSidebar.classList.toggle('collapsed');
+            const span = this.querySelector('span');
+            if (settingsSidebar.classList.contains('collapsed')) {
+                span.textContent = '»';
+            } else {
+                span.textContent = '«';
             }
         });
+
+        // 保存设置功能
+        document.getElementById('saveSettings').addEventListener('click', function() {
+            alert('设置已保存！');
+        });
+
+        // 重置设置功能
+        document.getElementById('resetSettings').addEventListener('click', function() {
+            if (confirm('确定要重置为默认设置吗？')) {
+                document.getElementById('themeToggle').checked = false;
+                document.getElementById('languageSelect').value = 'zh-CN';
+                document.getElementById('modelSelect').value = 'tsakt';
+                document.getElementById('adaptiveToggle').checked = false;
+                document.getElementById('studyGoalInput').value = '';
+                alert('设置已重置为默认值！');
+            }
+        });
+
+        // 使用ECharts绘制模型对比图表
+        const chartDom = document.getElementById('comparisonChart');
+        if (chartDom) {
+            const myChart = echarts.init(chartDom);
+            
+            const option = {
+                title: {
+                    text: '模型性能对比',
+                    left: 'center',
+                    textStyle: {
+                        color: '#007acc'
+                    }
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                legend: {
+                    data: ['知识追踪模型 (AUC)', '预测模型 (准确率)'],
+                    bottom: 0
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['DKT', 'SAKT', 'TSAKT', 'FFW', 'LR', '张量自注意力', 'RNN', 'LSTM', 'GRU', 'Apriori', '平均算法'],
+                    axisLabel: {
+                        rotate: 45
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    min: 0,
+                    max: 1,
+                    name: '性能指标',
+                    nameTextStyle: {
+                        color: '#555'
+                    }
+                },
+                series: [
+                    {
+                        name: '知识追踪模型 (AUC)',
+                        type: 'bar',
+                        data: [0.7523, 0.7769, 0.7843, 0.7234, 0.6891, null, null, null, null, null, null],
+                        itemStyle: {
+                            color: '#007acc'
+                        }
+                    },
+                    {
+                        name: '预测模型 (准确率)',
+                        type: 'bar',
+                        data: [null, null, null, null, null, 0.785, 0.752, 0.768, 0.761, 0.723, 0.792],
+                        itemStyle: {
+                            color: '#0096c7'
+                        }
+                    }
+                ]
+            };
+            
+            myChart.setOption(option);
+            
+            // 响应式调整
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            });
+        }
     </script>
 </body>
 </html>
