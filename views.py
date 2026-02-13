@@ -22,10 +22,14 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 def load_models(dataset):
     # 同时检查两种数据文件格式
     data_file = None
-    if os.path.exists(os.path.join('data', dataset, 'preprocessed_data.csv')):
-        data_file = os.path.join('data', dataset, 'preprocessed_data.csv')
-    elif os.path.exists(os.path.join('data', dataset, 'preprocessed_train_data.csv')):
-        data_file = os.path.join('data', dataset, 'preprocessed_train_data.csv')
+    
+    path1 = os.path.join('data', dataset, 'preprocessed_data.csv')
+    path2 = os.path.join('data', dataset, 'preprocessed_train_data.csv')
+    
+    if os.path.exists(path1):
+        data_file = path1
+    elif os.path.exists(path2):
+        data_file = path2
     
     if not data_file:
         return None, None, None, None, None, False
@@ -60,8 +64,6 @@ def load_models(dataset):
 
 def get_available_datasets():
     datasets = []
-    # 硬编码的数据集列表，确保即使data目录不存在也能显示选项
-    default_datasets = ['assistments09', 'assistments12', 'assistments15', 'algebra05', 'assistments17', 'ednet', 'synthetic']
     
     # 检查data目录是否存在
     if os.path.exists('data'):
@@ -69,10 +71,6 @@ def get_available_datasets():
             if os.path.isdir(os.path.join('data', folder)):
                 if os.path.exists(os.path.join('data', folder, 'preprocessed_train_data.csv')) or os.path.exists(os.path.join('data', folder, 'preprocessed_data.csv')):
                     datasets.append(folder)
-    
-    # 如果没有找到数据集，使用默认列表
-    if not datasets:
-        datasets = default_datasets
     
     return sorted(datasets)
 
@@ -383,8 +381,18 @@ def api_learning_path(request, dataset, user_id):
     mappings = load_mappings()
     
     try:
+        print(f'开始初始化LearningPathOptimizer，数据集: {dataset}，用户ID: {user_id}')
         learning_path_optimizer = LearningPathOptimizer(df)
+        print(f'LearningPathOptimizer初始化完成，adaptive_path: {learning_path_optimizer.adaptive_path is not None}')
+        
+        # 检查LearningPathOptimizer是否初始化成功
+        if learning_path_optimizer.adaptive_path is None:
+            print(f'LearningPathOptimizer初始化失败: {learning_path_optimizer.error_message}')
+            return JsonResponse({'error': f'学习路径优化器初始化失败: {learning_path_optimizer.error_message}'}, status=500)
+        
+        print(f'开始生成学习路径，用户ID: {user_id}，最大长度: {max_length}')
         learning_path = learning_path_optimizer.adaptive_path.recommend_learning_path(int(user_id), max_length=max_length)
+        print(f'学习路径生成完成，路径长度: {len(learning_path) if learning_path else 0}')
         
         if learning_path:
             path = []
@@ -396,10 +404,33 @@ def api_learning_path(request, dataset, user_id):
                     'skill_name': skill_name
                 })
             
+            print(f'返回学习路径，包含 {len(path)} 个知识点')
             return JsonResponse({'path': path})
         else:
-            return JsonResponse({'path': []})
+            print(f'学习路径为空，使用默认路径')
+            # 当没有生成学习路径时，尝试使用默认路径
+            # 获取所有知识点
+            all_skills = df['skill_id'].unique()
+            if len(all_skills) > 0:
+                # 按难度排序，选择前max_length个知识点
+                sorted_skills = sorted(all_skills)[:max_length]
+                path = []
+                for i, skill_id in enumerate(sorted_skills, 1):
+                    skill_name = get_skill_name(mappings, skill_id)
+                    path.append({
+                        'step': i,
+                        'skill_id': int(skill_id),
+                        'skill_name': skill_name
+                    })
+                print(f'返回默认路径，包含 {len(path)} 个知识点')
+                return JsonResponse({'path': path})
+            else:
+                print(f'没有可用的知识点')
+                return JsonResponse({'path': []})
     except Exception as e:
+        print(f'生成学习路径时发生异常: {str(e)}')
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
 
 def recommendation_page(request):
@@ -960,13 +991,7 @@ def api_ids(request, dataset, name_type):
     try:
         # 检查data目录是否存在
         if not os.path.exists('data'):
-            # 如果data目录不存在，返回默认的学生ID列表
-            if name_type == 'student':
-                return JsonResponse({'success': True, 'ids': list(range(1, 11))})  # 默认10个学生
-            elif name_type == 'skill':
-                return JsonResponse({'success': True, 'ids': list(range(1, 21))})  # 默认20个知识点
-            elif name_type == 'item':
-                return JsonResponse({'success': True, 'ids': list(range(1, 51))})  # 默认50个题目
+            return JsonResponse({'success': False, 'error': 'data目录不存在'}, status=404)
         
         # 同时检查两种数据文件格式
         data_file = None
@@ -975,13 +1000,7 @@ def api_ids(request, dataset, name_type):
         elif os.path.exists(os.path.join('data', dataset, 'preprocessed_train_data.csv')):
             data_file = os.path.join('data', dataset, 'preprocessed_train_data.csv')
         else:
-            # 如果数据集文件夹不存在，返回默认ID列表
-            if name_type == 'student':
-                return JsonResponse({'success': True, 'ids': list(range(1, 11))})  # 默认10个学生
-            elif name_type == 'skill':
-                return JsonResponse({'success': True, 'ids': list(range(1, 21))})  # 默认20个知识点
-            elif name_type == 'item':
-                return JsonResponse({'success': True, 'ids': list(range(1, 51))})  # 默认50个题目
+            return JsonResponse({'success': False, 'error': '数据集不存在'}, status=404)
         
         df = pd.read_csv(data_file, sep="\t")
         
@@ -995,13 +1014,7 @@ def api_ids(request, dataset, name_type):
         
         return JsonResponse({'success': True, 'ids': ids})
     except Exception as e:
-        # 如果发生任何错误，返回默认ID列表
-        if name_type == 'student':
-            return JsonResponse({'success': True, 'ids': list(range(1, 11))})  # 默认10个学生
-        elif name_type == 'skill':
-            return JsonResponse({'success': True, 'ids': list(range(1, 21))})  # 默认20个知识点
-        elif name_type == 'item':
-            return JsonResponse({'success': True, 'ids': list(range(1, 51))})  # 默认50个题目
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -1109,38 +1122,12 @@ def api_heatmap(request, dataset, user_id):
     sakt_model, tsakt_model, df, num_items, num_skills, tsakt_available = load_models(dataset)
     
     if df is None:
-        # 如果数据集不存在，生成模拟的热力图数据
-        import random
-        heatmap_data = []
-        for i in range(1, 21):  # 模拟20个知识点
-            heatmap_data.append({
-                'skill_id': i,
-                'mastery': round(random.uniform(0.3, 0.95), 2),  # 随机掌握度
-                'count': random.randint(5, 20)  # 随机题目数量
-            })
-        return JsonResponse({
-            'data': heatmap_data,
-            'total_skills': len(heatmap_data),
-            'total_questions': sum(item['count'] for item in heatmap_data)
-        })
+        return JsonResponse({'error': '数据集不存在'}, status=404)
     
     user_data = df[df['user_id'] == int(user_id)]
     
     if len(user_data) == 0:
-        # 如果用户不存在，生成模拟的热力图数据
-        import random
-        heatmap_data = []
-        for i in range(1, 21):  # 模拟20个知识点
-            heatmap_data.append({
-                'skill_id': i,
-                'mastery': round(random.uniform(0.3, 0.95), 2),  # 随机掌握度
-                'count': random.randint(5, 20)  # 随机题目数量
-            })
-        return JsonResponse({
-            'data': heatmap_data,
-            'total_skills': len(heatmap_data),
-            'total_questions': sum(item['count'] for item in heatmap_data)
-        })
+        return JsonResponse({'error': '用户不存在'}, status=404)
     
     skill_stats = user_data.groupby('skill_id').agg({
         'correct': ['mean', 'count']

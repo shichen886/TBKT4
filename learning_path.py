@@ -12,16 +12,17 @@ class AdaptiveLearningPath:
             df: 学生答题数据，包含 user_id, item_id, skill_id, correct
         """
         try:
+            # 不限制数据量，保留所有用户的数据
             # 限制数据量，减少内存使用（增加到500个用户）
-            top_users = df['user_id'].value_counts().head(500).index
-            df = df[df['user_id'].isin(top_users)]
-            
-            top_items = df['item_id'].value_counts().head(500).index
-            df = df[df['item_id'].isin(top_items)]
+            # top_users = df['user_id'].value_counts().head(500).index
+            # df = df[df['user_id'].isin(top_users)]
+            # 
+            # top_items = df['item_id'].value_counts().head(500).index
+            # df = df[df['item_id'].isin(top_items)]
             
             # 检查数据是否足够
             if len(df) < 10:
-                raise ValueError(f"数据量不足，限制后只有{len(df)}条记录，至少需要10条记录")
+                raise ValueError(f"数据量不足，只有{len(df)}条记录，至少需要10条记录")
             
             # 检查必要的列是否存在
             required_columns = ['user_id', 'item_id', 'skill_id', 'correct']
@@ -29,8 +30,10 @@ class AdaptiveLearningPath:
             if missing_columns:
                 raise ValueError(f"数据缺少必要的列: {', '.join(missing_columns)}")
             
+            # 保存原始数据，用于查找用户数据
             self.df = df
-            
+            self.original_df = df
+              
             # 构建知识点关系图
             self.skill_graph = self._build_skill_graph()
             
@@ -151,9 +154,13 @@ class AdaptiveLearningPath:
         Returns:
             推荐的学习路径（知识点列表）
         """
-        user_data = self.df[self.df['user_id'] == user_id]
+        print(f'recommend_learning_path: user_id={user_id}, max_length={max_length}')
+        
+        # 使用原始数据查找用户数据
+        user_data = self.original_df[self.original_df['user_id'] == user_id]
         
         if len(user_data) == 0:
+            print('用户数据为空，返回空路径')
             return []
         
         # 获取学生已掌握的知识点（正确率 > 0.7）
@@ -163,12 +170,35 @@ class AdaptiveLearningPath:
             if skill_correct > 0.7:
                 mastered_skills.add(skill)
         
+        print(f'已掌握的知识点数量: {len(mastered_skills)}')
+        
         # 获取学生未掌握的知识点
         all_skills = set(self.df['skill_id'].unique())
         unmastered_skills = all_skills - mastered_skills
         
+        print(f'未掌握的知识点数量: {len(unmastered_skills)}')
+        
         if not unmastered_skills:
-            return []
+            # 如果学生已经掌握了所有知识点，返回需要巩固的知识点
+            # 选择正确率较低的知识点（0.5-0.7之间）
+            weak_skills = set()
+            for skill in user_data['skill_id'].unique():
+                skill_correct = user_data[user_data['skill_id'] == skill]['correct'].mean()
+                if 0.5 <= skill_correct <= 0.7:
+                    weak_skills.add(skill)
+            
+            print(f'需要巩固的知识点数量: {len(weak_skills)}')
+            
+            if not weak_skills:
+                # 如果没有需要巩固的知识点，返回所有知识点，按难度排序
+                sorted_skills = sorted(all_skills, key=lambda s: self.skill_difficulty.get(s, 0.5))[:max_length]
+                print(f'返回所有知识点，按难度排序，数量: {len(sorted_skills)}')
+                return sorted_skills
+            else:
+                # 返回需要巩固的知识点，按难度排序
+                sorted_skills = sorted(weak_skills, key=lambda s: self.skill_difficulty.get(s, 0.5))[:max_length]
+                print(f'返回需要巩固的知识点，按难度排序，数量: {len(sorted_skills)}')
+                return sorted_skills
         
         # 计算每个未掌握知识点的优先级
         skill_priorities = {}
@@ -201,12 +231,13 @@ class AdaptiveLearningPath:
         
         # 按优先级排序
         sorted_skills = sorted(skill_priorities.items(), key=lambda x: x[1], reverse=True)
+        print(f'按优先级排序的知识点数量: {len(sorted_skills)}')
         
         # 构建学习路径
         learning_path = []
         current_skills = mastered_skills.copy()
         
-        for skill, _ in sorted_skills:
+        for skill, priority in sorted_skills:
             if len(learning_path) >= max_length:
                 break
             
@@ -217,6 +248,34 @@ class AdaptiveLearningPath:
             if prerequisites_met:
                 learning_path.append(skill)
                 current_skills.add(skill)
+            else:
+                # 如果不满足前置条件，但前置条件为空，也添加到学习路径中
+                if len(predecessors) == 0:
+                    if len(learning_path) < max_length:
+                        learning_path.append(skill)
+                        current_skills.add(skill)
+                else:
+                    # 如果前置条件不满足，尝试添加前置条件到学习路径中
+                    for p in predecessors:
+                        if p not in current_skills and p not in learning_path and len(learning_path) < max_length:
+                            learning_path.append(p)
+                            current_skills.add(p)
+                    # 然后添加当前知识点
+                    if all(p in current_skills for p in predecessors) and len(learning_path) < max_length:
+                        learning_path.append(skill)
+                        current_skills.add(skill)
+        
+        print(f'最终学习路径数量: {len(learning_path)}')
+        
+        # 如果学习路径仍然为空，返回所有未掌握的知识点，按优先级排序
+        if not learning_path:
+            print('学习路径为空，返回所有未掌握的知识点，按优先级排序')
+            learning_path = [skill for skill, _ in sorted_skills[:max_length]]
+        
+        # 确保学习路径长度不超过最大长度
+        if len(learning_path) > max_length:
+            print(f'学习路径长度超过最大长度，截取前{max_length}个知识点')
+            learning_path = learning_path[:max_length]
         
         return learning_path
     
