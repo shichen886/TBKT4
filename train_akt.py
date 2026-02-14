@@ -13,7 +13,7 @@ import math
 import numpy as np
 import os
 
-from model_tsakt import TSAKT
+from model_akt import AKT
 from utils import *
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -107,7 +107,7 @@ def compute_loss(preds, labels, criterion):
 
 
 def train(train_data, val_data, model, optimizer, logger, saver, num_epochs, batch_size, grad_clip, scheduler):
-    """Train TSAKT model.
+    """Train AKT model.
 
     Arguments:
         train_data (list of tuples of torch Tensor)
@@ -147,118 +147,126 @@ def train(train_data, val_data, model, optimizer, logger, saver, num_epochs, bat
             clip_grad_norm_(model.parameters(), grad_clip)
             optimizer.step()
             step += 1
-            metrics.store({'loss/train': loss.item()})
-            metrics.store({'auc/train': train_auc})
-            metrics.store({'rmse/train': train_rmse})
 
-            # Logging
-            if step % 20 == 0:
-                logger.log_scalars(metrics.average(), step)
-        scheduler.step()
+            if step % 100 == 0:
+                print(f"Step {step}, Train Loss: {loss.item():.4f}, Train AUC: {train_auc:.4f}, Train RMSE: {train_rmse:.4f}")
+
         # Validation
-        model.eval()
+        val_losses = []
+        val_aucs = []
+        val_rmses = []
         for item_inputs, skill_inputs, label_inputs, item_ids, skill_ids, labels in val_batches:
             item_inputs = item_inputs.to(device)
             skill_inputs = skill_inputs.to(device)
             label_inputs = label_inputs.to(device)
             item_ids = item_ids.to(device)
             skill_ids = skill_ids.to(device)
-            with torch.no_grad():
-                preds = model(item_inputs, skill_inputs, label_inputs, item_ids, skill_ids)
-                preds = torch.sigmoid(preds).cpu()
+
+            preds = model(item_inputs, skill_inputs, label_inputs, item_ids, skill_ids)
+            loss = compute_loss(preds, labels.to(device), criterion)
+            preds = torch.sigmoid(preds).detach().cpu()
             val_auc = compute_auc(preds, labels)
             val_rmse = compute_rmse(preds, labels)
-            metrics.store({'auc/val': val_auc})
-            metrics.store({'rmse/val': val_rmse})
-        model.train()
 
-        # Save model
-        average_metrics = metrics.average()
-        logger.log_scalars(average_metrics, step)
-        stop = saver.save(average_metrics['auc/val'], model)
+            val_losses.append(loss.item())
+            val_aucs.append(val_auc)
+            val_rmses.append(val_rmse)
+
+        avg_val_loss = np.mean(val_losses)
+        avg_val_auc = np.mean(val_aucs)
+        avg_val_rmse = np.mean(val_rmses)
+
+        print(f"\nEpoch {epoch + 1}/{num_epochs}")
+        print(f"Val Loss: {avg_val_loss:.4f}, Val AUC: {avg_val_auc:.4f}, Val RMSE: {avg_val_rmse:.4f}\n")
+
+        if scheduler:
+            scheduler.step(avg_val_auc)
+
+        stop = saver.save(avg_val_auc, model)
         if stop:
+            print(f"Early stopping at epoch {epoch + 1}")
             break
 
+    return model
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Train TSAKT.')
-    parser.add_argument('--dataset', type=str,default='assistments12')
-    parser.add_argument('--logdir', type=str, default='runs/tsakt')
-    parser.add_argument('--savedir', type=str, default='save/tsakt')
-    parser.add_argument('--max_length', type=int, default=200)
-    parser.add_argument('--embed_size', type=int, default=60)
-    parser.add_argument('--num_attn_layers', type=int, default=2)
-    parser.add_argument('--num_heads', type=int, default=5)
-    parser.add_argument('--encode_pos', type=bool, default=True)
-    parser.add_argument('--max_pos', type=int, default=200)
-    parser.add_argument('--drop_prob', type=float, default=0.2)
-    parser.add_argument('--tensor_rank', type=int, default=3)
-    parser.add_argument('--batch_size', type=int, default=128)
-    parser.add_argument('--lr', type=float, default=1e-3)
-    parser.add_argument('--grad_clip', type=float, default=10)
-    parser.add_argument('--num_epochs', type=int, default=256)
+
+def main():
+    parser = argparse.ArgumentParser(description='Train AKT model')
+    parser.add_argument('--dataset', type=str, default='assistments09',
+                       help='Dataset name')
+    parser.add_argument('--embed_size', type=int, default=200,
+                       help='Embedding size')
+    parser.add_argument('--num_attn_layers', type=int, default=2,
+                       help='Number of attention layers')
+    parser.add_argument('--num_heads', type=int, default=8,
+                       help='Number of attention heads')
+    parser.add_argument('--drop_prob', type=float, default=0.2,
+                       help='Dropout probability')
+    parser.add_argument('--batch_size', type=int, default=128,
+                       help='Batch size')
+    parser.add_argument('--num_epochs', type=int, default=10,
+                       help='Number of epochs')
+    parser.add_argument('--learning_rate', type=float, default=0.0001,
+                       help='Learning rate')
+    parser.add_argument('--max_seq_len', type=int, default=200,
+                       help='Maximum sequence length')
+    parser.add_argument('--grad_clip', type=float, default=5.0,
+                       help='Gradient clipping')
+    parser.add_argument('--max_pos', type=int, default=10,
+                       help='Maximum position for positional encoding')
+    parser.add_argument('--savedir', type=str, default='save/akt',
+                       help='Save directory')
+
     args = parser.parse_args()
 
-    full_df = pd.read_csv(os.path.join('data', args.dataset, 'preprocessed_data.csv'), sep="\t")
-    train_df = pd.read_csv(os.path.join('data', args.dataset, 'preprocessed_data_train.csv'), sep="\t")
-    test_df = pd.read_csv(os.path.join('data', args.dataset, 'preprocessed_data_test.csv'), sep="\t")
+    # Load data
+    data_file = f'data/{args.dataset}/preprocessed_data.csv'
+    if not os.path.exists(data_file):
+        data_file = f'data/{args.dataset}/preprocessed_train_data.csv'
+    
+    df = pd.read_csv(data_file, sep='\t')
+    print(f"Loaded {len(df)} records from {data_file}")
 
-    train_data, val_data = get_data(train_df, args.max_length)
+    # Get data
+    train_data, val_data = get_data(df, args.max_seq_len)
 
-    num_items = int(full_df["item_id"].max() + 1)
-    num_skills = int(full_df["skill_id"].max() + 1)
+    # Model parameters
+    # 因为在get_data中item_id和skill_id被加了1，所以需要调整嵌入层大小
+    num_items = int(df['item_id'].max() + 2)  # +2 因为原始是0开始，加1后变成1开始
+    num_skills = int(df['skill_id'].max() + 2)
 
-    model = TSAKT(num_items, num_skills, args.embed_size, args.num_attn_layers, args.num_heads,
-                  args.encode_pos, args.max_pos, args.drop_prob, args.tensor_rank).to(device)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=5e-2)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.5)
-    param_str = (f'{args.dataset},'
-                         f'batch_size={args.batch_size},'
-                         f'max_length={args.max_length},'
-                         f'encode_pos={args.encode_pos},'
-                         f'max_pos={args.max_pos},'
-                         f'tensor_rank={args.tensor_rank}')
-    # logger = Logger(os.path.join(args.logdir, param_str))
-    # saver = Saver(args.savedir, param_str)
-    # train(train_data, val_data, model, optimizer, logger, saver, args.num_epochs,args.batch_size, args.grad_clip)
-    # Reduce batch size until it fits on GPU
-    while True:
-        try:
-            # Train
-            param_str = (f'{args.dataset},'f'batch_size={args.batch_size},'f'max_length={args.max_length},'f'encode_pos={args.encode_pos},'f'max_pos={args.max_pos},'f'tensor_rank={args.tensor_rank}')
-            logger = Logger(os.path.join(args.logdir, param_str))
-            saver = Saver(args.savedir, param_str, patience=10)
-            train(train_data, val_data, model, optimizer, logger, saver, args.num_epochs,
-            args.batch_size, args.grad_clip, scheduler)
-            break
-        except RuntimeError:
-            args.batch_size = args.batch_size // 2
-            print(f'Batch does not fit on gpu, reducing size to {args.batch_size}')
+    print(f"Num items: {num_items}, Num skills: {num_skills}")
 
-    logger.close()
+    # Create model
+    model = AKT(
+        num_items=num_items,
+        num_skills=num_skills,
+        embed_size=args.embed_size,
+        num_attn_layers=args.num_attn_layers,
+        num_heads=args.num_heads,
+        drop_prob=args.drop_prob,
+        max_pos=args.max_pos
+    ).to(device)
 
-    test_data, _ = get_data(test_df, args.max_length, train_split=1.0, randomize=False)
-    test_batches = prepare_batches(test_data, args.batch_size, randomize=False)
-    test_preds = np.empty(0)
+    # Optimizer
+    optimizer = Adam(model.parameters(), lr=args.learning_rate)
 
-    # Predict on test set
-    model.eval()
-    for item_inputs, skill_inputs, label_inputs, item_ids, skill_ids, labels in test_batches:
-        item_inputs = item_inputs.to(device)
-        skill_inputs = skill_inputs.to(device)
-        label_inputs = label_inputs.to(device)
-        item_ids = item_ids.to(device)
-        skill_ids = skill_ids.to(device)
-        with torch.no_grad():
-            preds = model(item_inputs, skill_inputs, label_inputs, item_ids, skill_ids)
-            preds = torch.sigmoid(preds[labels >= 0]).flatten().cpu().numpy()
-            test_preds = np.concatenate([test_preds, preds])
+    # Scheduler
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='max', factor=0.5, patience=5
+    )
 
-    # Write predictions to csv
-    test_df["TSAKT"] = test_preds
-    test_df.to_csv(f'data/{args.dataset}/preprocessed_data_test.csv', sep="\t", index=False)
+    # Saver
+    param_str = f"{args.dataset},batch_size={args.batch_size},max_length={args.max_seq_len},max_pos={args.max_pos}"
+    saver = Saver(args.savedir, param_str, patience=10)
 
-    print("auc_test = ", roc_auc_score(test_df["correct"], test_preds))
-    test_preds = torch.tensor(test_preds)
-    labels = torch.tensor(test_df["correct"])
-    print("rmse_test = ", compute_rmse(test_preds, labels))
+    # Train
+    print("\nStarting training...")
+    model = train(train_data, val_data, model, optimizer, None, saver,
+                args.num_epochs, args.batch_size, args.grad_clip, scheduler)
+
+    print("\nTraining completed!")
+
+
+if __name__ == '__main__':
+    main()

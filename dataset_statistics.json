@@ -1,0 +1,86 @@
+[
+  {
+    "dataset_name": "assistments09",
+    "train_records": 2130684,
+    "test_records": 551527,
+    "total_records": 2682211,
+    "num_students": 18071,
+    "num_items": 52096,
+    "num_skills": 265,
+    "avg_correct_rate": 0.6966809719320181,
+    "avg_records_per_student": 117.90625864645011,
+    "avg_records_per_item": 40.89918611793612
+  },
+  {
+    "dataset_name": "assistments12",
+    "train_records": 357001,
+    "test_records": 90586,
+    "total_records": 447587,
+    "num_students": 1366,
+    "num_items": 3141,
+    "num_skills": 411,
+    "avg_correct_rate": 0.43466544911638905,
+    "avg_records_per_student": 261.34773060029283,
+    "avg_records_per_item": 113.65838904807386
+  },
+  {
+    "dataset_name": "assistments15",
+    "train_records": 155697,
+    "test_records": 33600,
+    "total_records": 189297,
+    "num_students": 225,
+    "num_items": 1223,
+    "num_skills": 98,
+    "avg_correct_rate": 0.7638490144318772,
+    "avg_records_per_student": 691.9866666666667,
+    "avg_records_per_item": 127.30744071954211
+  },
+  {
+    "dataset_name": "assistments17",
+    "train_records": 476985,
+    "test_records": 129998,
+    "total_records": 606983,
+    "num_students": 453,
+    "num_items": 140497,
+    "num_skills": 268,
+    "avg_correct_rate": 0.7557617115842217,
+    "avg_records_per_student": 1052.9470198675497,
+    "avg_records_per_item": 3.394983522779846
+  },
+  {
+    "dataset_name": "algebra05",
+    "train_records": 476985,
+    "test_records": 129998,
+    "total_records": 606983,
+    "num_students": 453,
+    "num_items": 140497,
+    "num_skills": 268,
+    "avg_correct_rate": 0.7557617115842217,
+    "avg_records_per_student": 1052.9470198675497,
+    "avg_records_per_item": 3.394983522779846
+  },
+  {
+    "dataset_name": "bridge_algebra06",
+    "train_records": 688885,
+    "test_records": 394893,
+    "total_records": 1083778,
+    "num_students": 824,
+    "num_items": 39889,
+    "num_skills": 327,
+    "avg_correct_rate": 0.8546912764830124,
+    "avg_records_per_student": 836.0254854368932,
+    "avg_records_per_item": 17.27004938704906
+  },
+  {
+    "dataset_name": "statics",
+    "train_records": 475165,
+    "test_records": 103561,
+    "total_records": 578726,
+    "num_students": 145,
+    "num_items": 409,
+    "num_skills": 221,
+    "avg_correct_rate": 0.7778077089011186,
+    "avg_records_per_student": 3277.0,
+    "avg_records_per_item": 1161.7726161369194
+  }
+]

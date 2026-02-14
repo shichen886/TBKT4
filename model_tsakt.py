@@ -171,6 +171,35 @@ class TSAKT(nn.Module):
         if inputs.is_cuda:
             mask = mask.cuda()
 
+        # Apply position encoding if enabled
+        if self.encode_pos:
+            seq_len = inputs.size(1)
+            batch_size = inputs.size(0)
+            
+            # Generate position indices and ensure they are within bounds
+            positions = torch.arange(seq_len, device=inputs.device)
+            positions = torch.clamp(positions, 0, self.pos_key_embeds.num_embeddings - 1)
+            
+            # Get position embeddings
+            pos_key = self.pos_key_embeds(positions)
+            pos_value = self.pos_value_embeds(positions)
+            
+            # Expand to batch size
+            pos_key = pos_key.unsqueeze(0).expand(batch_size, -1, -1)
+            pos_value = pos_value.unsqueeze(0).expand(batch_size, -1, -1)
+            
+            # Ensure dimension compatibility
+            if pos_value.size(-1) != inputs.size(-1):
+                # Adjust position embedding dimensions to match inputs
+                pos_value = pos_value.repeat(1, 1, inputs.size(-1) // pos_value.size(-1))
+            if pos_key.size(-1) != query.size(-1):
+                # Adjust position embedding dimensions to match query
+                pos_key = pos_key.repeat(1, 1, query.size(-1) // pos_key.size(-1))
+            
+            # Add position embeddings to inputs and query
+            inputs = inputs + pos_value
+            query = query + pos_key
+
         outputs = self.dropout(self.attn_layers[0](query, inputs, inputs, mask))
         for l in self.attn_layers[1:]:
             residual = l(query, outputs, outputs, mask)

@@ -3,6 +3,7 @@ import pandas as pd
 from random import shuffle
 from sklearn.metrics import roc_auc_score, accuracy_score
 
+import torch
 import torch.nn as nn
 from torch.optim import Adam
 from torch.nn.utils.rnn import pad_sequence
@@ -10,9 +11,12 @@ from torch.nn.utils.rnn import pad_sequence
 from model_dkt1 import DKT1
 from utils import *
 
+# 检查是否有可用的GPU
+USE_CUDA = torch.cuda.is_available()
+DEVICE = torch.device('cuda' if USE_CUDA else 'cpu')
 
 def cuda(tensor):
-    return tensor.cuda() if tensor is not None else None
+    return tensor.to(DEVICE) if tensor is not None else None
 
 
 def get_data(df, item_in, skill_in, item_out, skill_out, skill_separate, train_split=0.8, randomize=True):
@@ -80,13 +84,23 @@ def prepare_batches(data, batch_size, randomize=True):
 
 
 def get_preds(preds, item_ids, skill_ids, labels):
-    preds = preds[labels >= 0]
+    # 确保所有张量都在同一个设备上
+    device = preds.device
+    if labels.device != device:
+        labels = labels.to(device)
+    
+    mask = labels >= 0
+    preds = preds[mask]
 
     if (item_ids is not None):
-        item_ids = item_ids[labels >= 0]
+        if item_ids.device != device:
+            item_ids = item_ids.to(device)
+        item_ids = item_ids[mask]
         preds = preds[torch.arange(preds.size(0)), item_ids]
     elif (skill_ids is not None):
-        skill_ids = skill_ids[labels >= 0]
+        if skill_ids.device != device:
+            skill_ids = skill_ids.to(device)
+        skill_ids = skill_ids[mask]
         preds = preds[torch.arange(preds.size(0)), skill_ids]
 
     return preds
@@ -231,6 +245,8 @@ if __name__ == "__main__":
     optimizer = Adam(model.parameters(), lr=args.lr)
 
     # Reduce batch size until it fits on GPU
+    max_retries = 5
+    retry_count = 0
     while True:
         try:
             # Train
@@ -239,14 +255,22 @@ if __name__ == "__main__":
                          f'item_in={args.item_in},'
                          f'skill_in={args.skill_in},'
                          f'item_out={args.item_out},'
-                         f'skill_out={args.skill_out}'
+                         f'skill_out={args.skill_out},'
                          f'skill_separate={args.skill_separate}')
             logger = Logger(os.path.join(args.logdir, param_str))
             saver = Saver(args.savedir, param_str)
             train(train_data, val_data, model, optimizer, logger, saver, args.num_epochs, args.batch_size)
             break
-        except RuntimeError:
+        except RuntimeError as e:
+            retry_count += 1
+            if args.batch_size == 1 and retry_count >= max_retries:
+                print(f'Error: Cannot fit batch size 1 on GPU after {max_retries} retries.')
+                print(f'Please reduce model size (hid_size) or use a smaller dataset.')
+                print(f'Current hid_size: {args.hid_size}')
+                raise e
             args.batch_size = args.batch_size // 2
+            if args.batch_size == 0:
+                args.batch_size = 1
             print(f'Batch does not fit on gpu, reducing size to {args.batch_size}')
 
     logger.close()
