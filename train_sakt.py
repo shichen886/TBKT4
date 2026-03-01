@@ -1,6 +1,7 @@
 import argparse
 import pandas as pd
 from random import shuffle
+import json
 
 import torch.optim.lr_scheduler
 from sklearn.metrics import roc_auc_score, accuracy_score
@@ -9,12 +10,20 @@ import torch.nn as nn
 from torch.optim import Adam
 from torch.nn.utils import clip_grad_norm_
 from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import Dataset, DataLoader
 import math
 import numpy as np
 import os
 
 from model_sakt import SAKT
 from utils import *
+
+try:
+    import matplotlib.pyplot as plt
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
+    print("Warning: matplotlib not available, training curves will not be plotted")
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
@@ -83,6 +92,62 @@ def prepare_batches(data, batch_size, randomize=True):
     return batches
 
 
+class KTDataset(Dataset):
+    """
+    Knowledge Tracing Dataset for PyTorch DataLoader
+    
+    顶级会议标准：使用torch.utils.data.Dataset + DataLoader
+    优势：
+    - 更规范的代码结构
+    - 支持多进程加载（num_workers）
+    - 自动内存优化（pin_memory）
+    - reviewer看着更舒服
+    
+    Arguments:
+        data (list): list of (item_ids, skill_ids, labels) tuples
+    """
+    
+    def __init__(self, data):
+        self.data = data
+    
+    def __len__(self):
+        return len(self.data)
+    
+    def __getitem__(self, idx):
+        return self.data[idx]
+
+
+def kt_collate_fn(batch):
+    """
+    Custom collate function for variable-length sequences in Knowledge Tracing
+    
+    顶级会议标准：自定义collate_fn处理变长序列
+    
+    Arguments:
+        batch (list): list of (item_ids, skill_ids, labels) tuples
+    
+    Returns:
+        item_ids (torch.Tensor): padded item_ids [batch_size, max_len]
+        skill_ids (torch.Tensor): padded skill_ids [batch_size, max_len]
+        labels (torch.Tensor): padded labels [batch_size, max_len]
+        mask (torch.Tensor): valid positions mask [batch_size, max_len]
+    """
+    # Unpack batch
+    item_ids = [item[0] for item in batch]
+    skill_ids = [item[1] for item in batch]
+    labels = [item[2] for item in batch]
+    
+    # Pad sequences to same length
+    item_ids = pad_sequence(item_ids, batch_first=True, padding_value=0)
+    skill_ids = pad_sequence(skill_ids, batch_first=True, padding_value=0)
+    labels = pad_sequence(labels, batch_first=True, padding_value=-1)
+    
+    # Create mask (1 for valid positions, 0 for padding)
+    mask = (labels >= 0).float()
+    
+    return item_ids, skill_ids, labels, mask
+
+
 def compute_auc(preds, labels):
     preds = preds[labels >= 0].flatten()
     labels = labels[labels >= 0].float()
@@ -106,6 +171,48 @@ def compute_loss(preds, labels, criterion):
     return criterion(preds, labels)
 
 
+def plot_training_curves(history, dataset_name, savedir):
+    """Plot and save training curves."""
+    if not MATPLOTLIB_AVAILABLE:
+        print("Skipping training curve plot: matplotlib not available")
+        return
+    
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    
+    epochs = history['epochs']
+    
+    axes[0].plot(epochs, history['train_loss'], label='Train Loss', marker='o')
+    axes[0].plot(epochs, history['val_loss'], label='Val Loss', marker='s')
+    axes[0].set_xlabel('Epoch')
+    axes[0].set_ylabel('Loss')
+    axes[0].set_title('Training and Validation Loss')
+    axes[0].legend()
+    axes[0].grid(True, alpha=0.3)
+    
+    axes[1].plot(epochs, history['train_auc'], label='Train AUC', marker='o')
+    axes[1].plot(epochs, history['val_auc'], label='Val AUC', marker='s')
+    axes[1].set_xlabel('Epoch')
+    axes[1].set_ylabel('AUC')
+    axes[1].set_title('Training and Validation AUC')
+    axes[1].legend()
+    axes[1].grid(True, alpha=0.3)
+    
+    axes[2].plot(epochs, history['train_rmse'], label='Train RMSE', marker='o')
+    axes[2].plot(epochs, history['val_rmse'], label='Val RMSE', marker='s')
+    axes[2].set_xlabel('Epoch')
+    axes[2].set_ylabel('RMSE')
+    axes[2].set_title('Training and Validation RMSE')
+    axes[2].legend()
+    axes[2].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    
+    plot_path = os.path.join(savedir, f"{dataset_name}_training_curves.png")
+    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+    print(f"Saved training curves to {plot_path}")
+    plt.close()
+
+
 def train(train_data, val_data, model, optimizer, logger, saver, num_epochs, batch_size, grad_clip, scheduler):
     """Train SAKT model.
 
@@ -123,6 +230,16 @@ def train(train_data, val_data, model, optimizer, logger, saver, num_epochs, bat
     criterion = nn.BCEWithLogitsLoss()
     metrics = Metrics()
     step = 0
+    
+    training_history = {
+        'train_loss': [],
+        'train_auc': [],
+        'train_rmse': [],
+        'val_loss': [],
+        'val_auc': [],
+        'val_rmse': [],
+        'epochs': []
+    }
 
     for epoch in range(num_epochs):
         train_batches = prepare_batches(train_data, batch_size)
@@ -173,16 +290,29 @@ def train(train_data, val_data, model, optimizer, logger, saver, num_epochs, bat
                 preds = torch.sigmoid(preds).cpu()
             val_auc = compute_auc(preds, labels)
             val_rmse = compute_rmse(preds, labels)
+            val_loss = compute_loss(preds, labels, criterion)
             metrics.store({'auc/val': val_auc})
             metrics.store({'rmse/val': val_rmse})
+            metrics.store({'loss/val': val_loss})
         model.train()
 
         # Save model
         average_metrics = metrics.average()
         logger.log_scalars(average_metrics, step)
         stop = saver.save(average_metrics['auc/val'], model)
+        
+        training_history['train_loss'].append(average_metrics.get('loss/train', 0))
+        training_history['train_auc'].append(average_metrics.get('auc/train', 0))
+        training_history['train_rmse'].append(average_metrics.get('rmse/train', 0))
+        training_history['val_loss'].append(average_metrics.get('loss/val', 0))
+        training_history['val_auc'].append(average_metrics.get('auc/val', 0))
+        training_history['val_rmse'].append(average_metrics.get('rmse/val', 0))
+        training_history['epochs'].append(epoch + 1)
+        
         if stop:
             break
+    
+    return training_history
 
 
 if __name__ == "__main__":
@@ -216,6 +346,13 @@ if __name__ == "__main__":
                   args.encode_pos, args.max_pos, args.drop_prob).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=5e-2)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.5)
+    
+    os.makedirs(args.savedir, exist_ok=True)
+    config_path = os.path.join(args.savedir, f"{args.dataset}_config.json")
+    with open(config_path, "w") as f:
+        json.dump(vars(args), f, indent=4)
+    print(f"Saved config to {config_path}")
+    
     param_str = (f'{args.dataset},'
                          f'batch_size={args.batch_size},'
                          f'max_length={args.max_length},'
@@ -239,6 +376,19 @@ if __name__ == "__main__":
             print(f'Batch does not fit on gpu, reducing size to {args.batch_size}')
 
     logger.close()
+    
+    training_history = train(train_data, val_data, model, optimizer, logger, saver, args.num_epochs,
+                        args.batch_size, args.grad_clip, scheduler)
+    
+    training_history['best_val_auc'] = max(training_history['val_auc'])
+    training_history['best_val_loss'] = min(training_history['val_loss'])
+    
+    history_path = os.path.join(args.savedir, f"{args.dataset}_training_history.json")
+    with open(history_path, "w") as f:
+        json.dump(training_history, f, indent=4)
+    print(f"Saved training history to {history_path}")
+    
+    plot_training_curves(training_history, args.dataset, args.savedir)
 
     test_data, _ = get_data(test_df, args.max_length, train_split=1.0, randomize=False)
     test_batches = prepare_batches(test_data, args.batch_size, randomize=False)

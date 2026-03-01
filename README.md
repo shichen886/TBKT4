@@ -1,96 +1,137 @@
-# Learner Performance Prediction
+# TBKT4 项目文件说明
 
-Simple and performant implementations of learner performance prediction algorithms:
-- [Performance Factors Analysis (PFA)](http://pact.cs.cmu.edu/koedinger/pubs/AIED%202009%20final%20Pavlik%20Cen%20Keodinger%20corrected.pdf)
-- [DAS3H](https://arxiv.org/pdf/1905.06873.pdf)
-- [Deep Knowledge Tracing (DKT)](https://stanford.edu/~cpiech/bio/papers/deepKnowledgeTracing.pdf)
-- [Self-Attentive Knowledge Tracing (SAKT)](https://arxiv.org/pdf/1907.06837.pdf)
+## 📁 核心文件结构
 
-## Setup
-
-Create a new conda environment, install [PyTorch](https://pytorch.org) and the remaining requirements:
+### 🎯 模型文件（4个）
 ```
-conda create python==3.7 -n learner-performance-prediction
-conda activate learner-performance-prediction
-pip install -r requirements.txt
-conda install pytorch==1.2.0 torchvision==0.4.0 -c pytorch
+model_sakt.py          # SAKT模型
+model_akt.py           # AKT模型  
+model_dkt1.py          # DKT模型
+model_tsakt_linear.py    # TSAKT-Linear模型（最新版本）
 ```
 
-The code supports the following datasets:
-- [ASSISTments 2009-2010](https://sites.google.com/site/assistmentsdata/home/assistment-2009-2010-data/skill-builder-data-2009-2010) (assistments09)
-- [ASSISTments 2012-2013](https://sites.google.com/site/assistmentsdata/home/2012-13-school-data-with-affect) (assistments12)
-- [ASSISTments 2015](https://sites.google.com/site/assistmentsdata/home/2015-assistments-skill-builder-data) (assistments15)
-- [ASSISTments Challenge 2017](https://sites.google.com/view/assistmentsdatamining) (assistments17)
-- [Bridge to Algebra 2006-2007](https://pslcdatashop.web.cmu.edu/KDDCup/downloads.jsp) (bridge_algebra06)
-- [Algebra I 2005-2006](https://pslcdatashop.web.cmu.edu/KDDCup/downloads.jsp) (algebra05)
-- [Spanish](https://github.com/robert-lindsey/WCRP) (spanish)
-- [Statics](https://pslcdatashop.web.cmu.edu) (statics)
-
-| Dataset          | # Users  | # Items | # Skills | # Interactions | Mean # skills/item | Timestamps | Median length |
-| ---------------- | -------- | ------- | -------- | -------------- | ------------------ | ---------- | ------------- |
-| assistments09    | 3,241    | 17,709  | 124      | 278,868        | 1.20               | No         | 35            |
-| assistments12    | 29,018   | 53,086  | 265      | 2,711,602      | 1.00               | Yes        | 49            |
-| assistments15    | 14,567   | 100     | 100      | 658,887        | 1.00               | No         | 20            |
-| assistments17    | 1,708    | 3,162   | 102      | 942,814        | 1.23               | Yes        | 441           |
-| bridge_algebra06 | 1,146    | 129,263 | 493      | 1,817,476      | 1.01               | Yes        | 1,362         |
-| algebra05        | 574      | 173,113 | 112      | 607,025        | 1.36               | Yes        | 574           |
-| spanish          | 182      | 409     | 221      | 578,726        | 1.00               | No         | 1,924         |
-| statics          | 282      | 1,223   | 98       | 189,297        | 1.00               | No         | 635           |
-
-For your convenience, the preprocessed data sets are in the `data/` folder. You do NOT need to preprocess data sets yourself.
-
-If you want to reproduce the preprocessing, download the data from one of the links above and:
-- place the main file under `data/<dataset codename>/data.csv` for an ASSISTments dataset
-- place the main file under `data/<dataset codename>/data.txt` for a KDDCup dataset
-- place the two data files under `data/<dataset codename>/{filename}` for the Spanish dataset
-
+### 🚀 训练脚本（4个）
 ```
-python prepare_data.py --dataset <dataset codename> --remove_nan_skills
+train_sakt.py          # 训练SAKT
+train_akt.py           # 训练AKT
+train_dkt1.py         # 训练DKT
+train_tsakt_linear_final.py  # 训练TSAKT-Linear（最新版本）
 ```
 
-## Training
-
-#### Logistic Regression
-
-To encode a sparse feature matrix with specified features:
-- Item Response Theory (IRT): `-i` 
-- PFA: `-s -sc -w -a` 
-- DAS3H: `-i -s -sc -w -a -tw`
-- Best logistic regression features (Best-LR): `-i -s -ic -sc -tc -w -a`
-
+### 📊 评估脚本（2个）
 ```
-python encode.py --dataset <dataset codename> <feature flags>
+evaluate_sakt_correct.py      # 评估SAKT模型
+compare_sakt_tsakt_linear.py # 对比SAKT vs TSAKT-Linear
 ```
 
-To train a logistic regression model with a sparse feature matrix encoded through encode.py:
+### 🗑️ 归档文件（archive/）
+所有过时、重复、测试的文件都已移动到 `archive/` 目录中。
 
-```
-python train_lr.py --X_file data/<dataset codename>/X-<feature suffix>.npz --dataset <dataset codename>
-```
+## 🎯 使用说明
 
-#### Deep Knowledge Tracing
+### 训练模型
+```bash
+# 训练SAKT
+python train_sakt.py --dataset assistments12
 
-To train a DKT model:
+# 训练AKT
+python train_akt.py --dataset assistments12
 
-```
-python train_dkt2.py --dataset <dataset codename> 
-```
+# 训练DKT
+python train_dkt1.py --dataset assistments12
 
-#### Self-Attentive Knowledge Tracing
-
-To train a SAKT model:
-
-```
-python train_sakt.py --dataset <dataset codename>
+# 训练TSAKT-Linear
+python train_tsakt_linear_final.py --dataset assistments12
 ```
 
-## Results (AUC)
+### 评估模型
+```bash
+# 评估SAKT
+python evaluate_sakt_correct.py --dataset assistments12
 
-| Algorithm      | assist09      | assist12 | assist15      | assist17 | bridge06 | algebra05 | spanish  | statics  |
-| -------------- | ------------- | -------- | ------------- | -------- | -------- | --------- | -------- | -------- |
-| IRT            | 0.69          | 0.71     | 0.64          | 0.68     | 0.75     | 0.77      | 0.68     | 0.79     |       
-| PFA            | 0.72          | 0.67     | 0.69          | 0.62     | 0.77     | 0.76      | 0.85     | 0.69     |
-| DAS3H          | -             | 0.74     | -             | 0.69     | 0.79     | **0.83**  | -        | -        |
-| Best-LR        | **0.77**      | 0.75     | 0.70          | 0.71     | **0.80** | **0.83**  | **0.86** | 0.82     |
-| DKT            | 0.75          | **0.77** | **0.73**      | **0.77** | 0.79     | 0.82      | 0.83     | **0.83** |
-| SAKT           | 0.75          | 0.73     | **0.73**      | 0.72     | 0.78     | 0.80      | 0.83     | 0.81     |
+# 对比SAKT vs TSAKT-Linear
+python compare_sakt_tsakt_linear.py --dataset assistments12
+```
+
+## 📊 模型性能对比
+
+### SAKT vs TSAKT-Linear
+
+| 数据集 | SAKT AUC | TSAKT-Linear AUC | 改进 |
+|--------|-----------|-------------------|-------|
+| assistments09 | 0.7520 | 0.6842 | -9.0% |
+| assistments12 | 0.7604 | 0.7231 | -4.9% |
+
+**注意**: TSAKT-Linear在性能上略低于SAKT，但实现了内存节省。
+
+## 📁 目录结构
+```
+TBKT4/
+├── model_*.py              # 模型定义
+├── train_*.py             # 训练脚本
+├── evaluate_*.py           # 评估脚本
+├── compare_*.py           # 对比脚本
+├── web/                  # Web相关文件（12个）
+├── archive/               # 归档文件（94个文件）
+├── data/                 # 数据集目录
+├── save/                 # 保存的模型
+└── FILE_ORGANIZATION.md   # 文件整理说明
+```
+
+## 💡 重要提示
+
+1. **核心文件**: 只有10个核心文件在根目录
+2. **归档文件**: 94个过时文件已移至archive/
+3. **Web文件**: 12个Web相关文件已移至web/
+4. **模型参数**: 不同模型使用不同的参数配置
+5. **性能对比**: TSAKT-Linear实现了内存节省，但性能略低于SAKT
+
+## 🚀 快速开始
+
+1. 选择要训练的模型
+2. 运行对应的训练脚本
+3. 使用评估脚本检查性能
+4. 使用对比脚本进行模型比较
+
+## 📝 注意事项
+
+- 所有训练好的模型保存在 `save/` 目录
+- 数据集位于 `data/` 目录
+- 归档文件保留在 `archive/` 目录以防需要
+- Web文件存放在 `web/` 目录中
+- 如需添加新模型，请遵循现有命名规范
+
+## 📁 使用归档文件
+
+**从archive中使用文件的方法**:  
+如果你需要使用之前的文件，只需要从 `archive/` 目录中复制或移动文件到根目录即可。
+
+**示例**: 使用旧版本的TSAKT模型
+```bash
+# 复制旧版本模型到根目录
+copy archive\model_tsakt_v2.py .
+
+# 然后运行
+python model_tsakt_v2.py
+```
+
+## 🌐 使用Web文件
+
+**Web文件使用方法**:  
+Web相关文件已整理到 `web/` 目录中，包括：
+
+- `app.py` - Web应用入口
+- `views.py` - 视图函数
+- `urls.py` - 路由配置
+- `config.py` - 配置文件
+- `recommendation.py` - 推荐系统
+- 其他Web相关组件
+
+**运行Web应用**:
+```bash
+# 进入web目录
+cd web
+
+# 运行Web应用
+python app.py
+```

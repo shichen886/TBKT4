@@ -1,0 +1,101 @@
+[
+  {
+    "dataset": "assistments09",
+    "model_name": "SAKT",
+    "model_type": "SAKT",
+    "num_items": 52850,
+    "num_skills": 265,
+    "total_params": 1623521,
+    "trainable_params": 1623521,
+    "memory_allocated_mb": 0,
+    "memory_reserved_mb": 0
+  },
+  {
+    "dataset": "assistments09",
+    "model_name": "TSAKT-w/o-Pos",
+    "model_type": "TSAKT-w/o-Pos",
+    "num_items": 52850,
+    "num_skills": 265,
+    "total_params": 1623695,
+    "trainable_params": 1623695,
+    "memory_allocated_mb": 0,
+    "memory_reserved_mb": 0
+  },
+  {
+    "dataset": "assistments09",
+    "model_name": "TSAKT-Ful",
+    "model_type": "TSAKT-Ful",
+    "num_items": 52850,
+    "num_skills": 265,
+    "total_params": 1628375,
+    "trainable_params": 1628375,
+    "memory_allocated_mb": 0,
+    "memory_reserved_mb": 0
+  },
+  {
+    "dataset": "assistments12",
+    "model_name": "SAKT",
+    "model_type": "SAKT",
+    "num_items": 3162,
+    "num_skills": 411,
+    "total_params": 137261,
+    "trainable_params": 137261,
+    "memory_allocated_mb": 0,
+    "memory_reserved_mb": 0
+  },
+  {
+    "dataset": "assistments12",
+    "model_name": "TSAKT-w/o-Pos",
+    "model_type": "TSAKT-w/o-Pos",
+    "num_items": 3162,
+    "num_skills": 411,
+    "total_params": 137435,
+    "trainable_params": 137435,
+    "memory_allocated_mb": 0,
+    "memory_reserved_mb": 0
+  },
+  {
+    "dataset": "assistments12",
+    "model_name": "TSAKT-Ful",
+    "model_type": "TSAKT-Ful",
+    "num_items": 3162,
+    "num_skills": 411,
+    "total_params": 142115,
+    "trainable_params": 142115,
+    "memory_allocated_mb": 0,
+    "memory_reserved_mb": 0
+  },
+  {
+    "dataset": "assistments15",
+    "model_name": "SAKT",
+    "model_type": "SAKT",
+    "num_items": 1223,
+    "num_skills": 98,
+    "total_params": 69701,
+    "trainable_params": 69701,
+    "memory_allocated_mb": 0,
+    "memory_reserved_mb": 0
+  },
+  {
+    "dataset": "assistments15",
+    "model_name": "TSAKT-w/o-Pos",
+    "model_type": "TSAKT-w/o-Pos",
+    "num_items": 1223,
+    "num_skills": 98,
+    "total_params": 69875,
+    "trainable_params": 69875,
+    "memory_allocated_mb": 0,
+    "memory_reserved_mb": 0
+  },
+  {
+    "dataset": "assistments15",
+    "model_name": "TSAKT-Ful",
+    "model_type": "TSAKT-Ful",
+    "num_items": 1223,
+    "num_skills": 98,
+    "total_params": 74555,
+    "trainable_params": 74555,
+    "memory_allocated_mb": 0,
+    "memory_reserved_mb": 0
+  }
+]

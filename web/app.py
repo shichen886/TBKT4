@@ -1473,4 +1473,4 @@ user_id,item_id,timestamp,correct,skill_id
             st.metric("题目名称数", len(mappings["item_names"]))
 
 st.markdown("---")
-st.caption("© 2026 智能知识追踪系统 | 基于 SAKT 和 TSAKT 模型")
+st.caption("© 2024 智能知识追踪系统 | 基于 SAKT 和 TSAKT 模型")
